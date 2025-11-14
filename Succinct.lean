@@ -241,7 +241,13 @@ structure LinearCode (F : Type*) [Field F] where
   (m n : ℕ)
   (G   : Mat F m n)
 
-section WeightProps
+/-- Encode a message vector `x : F^n` to the codeword `G x : F^m`. -/
+def encode (C : LinearCode F) (x : Vec F C.n) : Vec F C.m :=
+  C.G *ᵥ x
+
+scoped infixl:70 " ⇀ₑ " => encode
+
+section Hamming
 variable {F : Type*} [Field F]
 variable [DecidableEq F]  -- needed so `x i ≠ 0` is a decidable predicate
 variable {n : ℕ}
@@ -308,45 +314,167 @@ lemma weightVec_smul_of_ne_zero (a : F) (x : Vec F n) (ha : a ≠ 0) :
   · -- left inverse/right inverse are trivial because we keep the same index
     intro ⟨i, _⟩; rfl
   · intro ⟨i, _⟩; rfl
-  
-end WeightProps
-
-/-- Encode a message vector `x : F^n` to the codeword `G x : F^m`. -/
-def encode (C : LinearCode F) (x : Vec F C.n) : Vec F C.m :=
-  C.G *ᵥ x
- 
-/-- Evaluation-code instance from Vandermonde at points `α`, degree bound `< n`. -/
-def evalCode {m n : ℕ} (α : EvalPoints m F) : LinearCode F :=
-  { m := m, n := n, G := vandermonde (F := F) α }
-
-/-- Encoding with `evalCode α` equals evaluating the polynomial defined by `x`. -/
-lemma evalCode_encode_eq_eval {m n : ℕ} (α : EvalPoints m F) (x : Vec F n) :
-    encode (evalCode α) x
-      = fun i : Fin m => evalPolyOfVec x (α i) := by
-  classical
-  simpa [evalCode, encode, vandermonde]
-    using (eval_vec_eq_vandermonde_mul (F := F) α x).symm
-
-/-! ### Hamming weight and distance -/
-
-variable [DecidableEq F]
 
 @[simp] lemma weightVec_zero {n : ℕ} :
     ∥(0 : Vec F n)∥₀ = 0 := by
   classical
   simp [weightVec]
 
-/-- Distance of a linear code: minimum Hamming weight among nonzero codewords
-    (as an infimum in `WithTop ℕ`). -/
-def distance (C : LinearCode F) : WithTop ℕ :=
-  sInf { w : WithTop ℕ |
-    ∃ x : Vec F C.n, x ≠ 0 ∧
-      w = ∥encode C x∥₀ }
+/-- **Triangle inequality** for the Hamming weight pseudonorm. -/
+lemma weightVec_triangle (x y : Vec F n) :
+    ∥x + y∥₀ ≤ ∥x∥₀ + ∥y∥₀ := by
+  classical
+  -- encode supports as finite subtypes and embed into a disjoint union
+  let Sxy := { i : Fin n // (x + y) i ≠ 0 }
+  let Sx  := { i : Fin n // x i ≠ 0 }
+  let Sy  := { i : Fin n // y i ≠ 0 }
+  -- build an injection from `Sxy` into the disjoint union `Sx ⊕ Sy`
+  have hcard :
+      Fintype.card Sxy ≤ Fintype.card Sx + Fintype.card Sy := by
+    classical
+    let f : Sxy → Sum Sx Sy := fun h =>
+      if hx : x h.1 = 0 then
+        Sum.inr
+          ⟨h.1, by
+            have : y h.1 ≠ 0 := by
+              simpa [Pi.add_apply, hx] using h.2
+            simpa using this⟩
+      else
+        Sum.inl ⟨h.1, by simpa using hx⟩
+    have hf : Function.Injective f := by
+      intro a b h
+      rcases a with ⟨i, hi⟩
+      rcases b with ⟨j, hj⟩
+      dsimp [f] at h
+      by_cases hxi : x i = 0
+      · have hxj : x j = 0 := by
+          by_contra hxj
+          have hxj' : x j ≠ 0 := by simpa using hxj
+          simpa [f, hxi, hxj'] using h
+        have hLeft :
+            f ⟨i, hi⟩
+              =
+            Sum.inr (α := Sx)
+              (⟨i, by
+                  have : y i ≠ 0 := by
+                    simpa [Pi.add_apply, hxi] using hi
+                  simpa using this⟩ : Sy) := by
+          simp [f, hxi]
+        have hRight :
+            f ⟨j, hj⟩
+              =
+            Sum.inr (α := Sx)
+              (⟨j, by
+                  have : y j ≠ 0 := by
+                    simpa [Pi.add_apply, hxj] using hj
+                  simpa using this⟩ : Sy) := by
+          simp [f, hxj]
+        have h' :=
+          (Eq.trans hLeft.symm (Eq.trans h hRight))
+        have : i = j := congrArg Subtype.val (Sum.inr.inj h')
+        subst this
+        simp
+      · have hxj : x j ≠ 0 := by
+          by_contra hxj
+          have hxj' : x j = 0 := by simpa using hxj
+          simpa [f, hxi, hxj'] using h
+        have hLeft :
+            f ⟨i, hi⟩
+              =
+            Sum.inl (β := Sy)
+              (⟨i, by
+                  have : x i ≠ 0 := by simpa using hxi
+                  simpa using this⟩ : Sx) := by
+          simp [f, hxi]
+        have hRight :
+            f ⟨j, hj⟩
+              =
+            Sum.inl (β := Sy)
+              (⟨j, by
+                  have : x j ≠ 0 := by simpa using hxj
+                  simpa using this⟩ : Sx) := by
+          simp [f, hxj]
+        have h' :=
+          (Eq.trans hLeft.symm (Eq.trans h hRight))
+        have : i = j := congrArg Subtype.val (Sum.inl.inj h')
+        subst this
+        simp
+    have hle :
+        Fintype.card Sxy ≤ Fintype.card (Sum Sx Sy) :=
+      Fintype.card_le_of_injective f hf
+    simpa [Fintype.card_sum] using hle
+  simpa [Sxy, Sx, Sy, weightVec] using hcard
 
 /-- Weight (ℓ₀ "norm") of a set of vectors:
 the minimum Hamming weight of any element, in `WithTop ℕ`
 so that empty sets give `⊤`. -/
 def weightSet (S : Set (Vec F n)) : WithTop ℕ :=
-  sInf ((fun x => (weightVec (F := F) (n := n) x : WithTop ℕ)) '' S)
+  sInf { w : WithTop ℕ | ∃ x ∈ S, w = ∥x∥₀ }
+
+scoped notation "∥" S "∥ₛ" => weightSet S
+
+-- point-set difference: { x - y | y ∈ S }
+def vecDiff (x : Vec F n) (S : Set (Vec F n)) : Set (Vec F n) :=
+  { z | ∃ y ∈ S, z = fun i => x i - y i }
+
+scoped infixl:70 " -ₛ " => vecDiff
+
+-- The main identity:
+lemma weightSet_vecDiff_eq_sInf
+    (x : Vec F n) (S : Set (Vec F n)) :
+    ∥x -ₛ S∥ₛ
+      =
+    sInf { w : WithTop ℕ | ∃ y ∈ S, w = ∥x - y∥₀ } := by
+  classical
+  -- identify the sets under the `sInf`
+  have hSet :
+      { w : WithTop ℕ | ∃ z ∈ x -ₛ S, w = ∥z∥₀ }
+        = { w : WithTop ℕ | ∃ y ∈ S, w = ∥x - y∥₀ } := by
+    ext w
+    constructor
+    · intro hw
+      rcases hw with ⟨z, hz, rfl⟩
+      rcases hz with ⟨y, hyS, hz⟩
+      have hxsub : x - y = fun i => x i - y i := by
+        ext i; rfl
+      refine ⟨y, hyS, ?_⟩
+      simp [hz, hxsub]
+    · intro hw
+      rcases hw with ⟨y, hyS, rfl⟩
+      have hxsub : x - y = fun i => x i - y i := by
+        ext i; rfl
+      refine ⟨x - y, ?_, by simp [hxsub]⟩
+      exact ⟨y, hyS, hxsub⟩
+  unfold weightSet
+  simp [hSet]
+
+end Hamming
+
+section Distance
+
+variable {F : Type*} [Field F] [DecidableEq F]
+
+/-- Distance of a linear code: minimum Hamming weight among nonzero codewords
+    (as an infimum in `WithTop ℕ`). -/
+def distance (C : LinearCode F) : WithTop ℕ :=
+  sInf { w : WithTop ℕ |
+    ∃ x : Vec F C.n, x ≠ 0 ∧ w = ∥C ⇀ₑ x∥₀ }
+
+end Distance
+
+section EvalCode
+
+/-- Evaluation-code instance from Vandermonde at points `α`, degree bound `< n`. -/
+def evalCode {m n : ℕ} (α : EvalPoints m F) : LinearCode F :=
+  { m := m, n := n, G := vandermonde (F := F) α }
+
+/-- Encoding with `evalCode α` equals evaluating the polynomial defined by `x`. -/
+lemma evalCode_encode_eq_eval {m n : ℕ} (α : EvalPoints m F) (x : Vec F n) :
+    (evalCode α) ⇀ₑ x
+      = fun i : Fin m => evalPolyOfVec x (α i) := by
+  simpa [evalCode, encode, vandermonde]
+    using (eval_vec_eq_vandermonde_mul α x).symm
+
+end EvalCode
 
 end Codes
