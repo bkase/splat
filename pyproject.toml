@@ -1,0 +1,11 @@
+[project]
+name = "lean-succinct-tools"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+  "aristotlelib>=0.4.1",  # pin/raise as you like
+]
+
+[tool.uv]
+# Generate a lock on sync; uv will cache wheels. Nothing special needed here.
+

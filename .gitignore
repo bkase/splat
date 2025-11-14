@@ -1,0 +1,33 @@
+# Lean & Lake build artifacts
+/.lake/
+/lake-packages/
+/build/
+*.olean
+
+# Tooling caches
+/.cache/
+/cache/
+*.log
+
+# Direnv / devenv generated state
+/.direnv/
+/.devenv/
+/.devenv-state/
+result
+result-*
+
+# Python / uv virtual envs and caches
+/.venv/
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.pyre/
+.python-version
+
+# Editors
+*~
+*.swp
+*.swo
+.DS_Store
