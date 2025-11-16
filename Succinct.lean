@@ -460,6 +460,43 @@ def distance (C : LinearCode F) : WithTop ℕ :=
   sInf { w : WithTop ℕ |
     ∃ x : Vec F C.n, x ≠ 0 ∧ w = ∥C ⇀ₑ x∥₀ }
 
+
+lemma distance_le_weight_encode_nonzero
+      (C : LinearCode F) (z : Vec F C.n) (hz : z ≠ 0) :
+      distance C ≤ (∥C ⇀ₑ z∥₀ : WithTop ℕ) := by
+  classical
+  unfold distance
+  refine sInf_le ?_
+  exact ⟨z, hz, rfl⟩
+
+lemma distance_le_weight_encode_distinct
+      (C : LinearCode F) (x y : Vec F C.n) (hxy : x ≠ y) :
+      distance C ≤ (∥encode C x - encode C y∥₀ : WithTop ℕ) := by
+  classical
+  have hz : x - y ≠ 0 := sub_ne_zero.mpr hxy
+  have hEnc :
+      encode C x - encode C y = encode C (x - y) := by
+    have h := (LinearMap.map_sub (Matrix.mulVecLin C.G) x y).symm
+    simpa [encode, Matrix.mulVecLin_apply] using h
+  simpa [hEnc] using
+    distance_le_weight_encode_nonzero (C := C) (z := x - y) hz
+
+lemma distance_le_weight_corruption
+      (C : LinearCode F) (x δ : Vec F C.n) (hδ : δ ≠ 0) :
+      distance C ≤ (∥C ⇀ₑ (x + δ) - C ⇀ₑ x∥₀ : WithTop ℕ) := by
+  have hEnc : C ⇀ₑ (x + δ) - C ⇀ₑ x = C ⇀ₑ δ := by
+    have h := (LinearMap.map_sub (Matrix.mulVecLin C.G) (x + δ) x).symm
+    have hsub : x + δ - x = δ := by simpa using add_sub_cancel x δ
+    simpa [encode, Matrix.mulVecLin_apply, hsub] using h
+  simpa [hEnc] using distance_le_weight_encode_nonzero (C := C) (z := δ) hδ
+
+lemma detect_corruption
+      (C : LinearCode F) {x x' : Vec F C.n} (hx : x ≠ x')
+      {d : WithTop ℕ} (hFew : ∥C ⇀ₑ x - C ⇀ₑ x'∥₀ < d) :
+      (distance C : WithTop ℕ) < d := by
+  have := distance_le_weight_encode_distinct (C := C) (x := x) (y := x') hx
+  exact lt_of_le_of_lt this hFew
+
 end Distance
 
 section EvalCode
