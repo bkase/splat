@@ -1,12 +1,12 @@
-# lean-succinct
+# SPLAT — Succinct Proofs and Linear Algebra Theorem-proven
 
-A Lean 4 formalization effort for the notes `2023-succinct-la.pdf`, tracking the linear-algebraic preliminaries that underpin succinct argument systems. At the moment everything lives in `Succinct.lean`, which mirrors Section 1.1 and the parts of Section 1.2.
+A Lean 4 formalization of the notes `2023-succinct-la.pdf`, capturing the linear-algebraic preliminaries that underpin succinct argument systems. The project now lives under the barrel module `Succinct.lean` with a small family of focused submodules.
 
 ## Project status
 
 - ✅ Section 1.1 (vectors, matrices, subspaces) is formalized with idiomatic mathlib constructions.
-- ⚙️ Section 1.2 is in progress; the file already contains Vandermonde and evaluation-map scaffolding that upcoming lemmas plug into.
-- 📄 The original reference lives alongside the code as `2023-succinct-la.pdf` so you can diff Lean statements against the text easily.
+- ⚙️ Section 1.2 in progress; Vandermonde/evaluation scaffolding, linear codes, weights, and distance are organized as modules.
+- 📄 The source notes live beside the code as `2023-succinct-la.pdf` for easy cross-checking.
 
 ## Getting started
 
@@ -36,19 +36,35 @@ We standardize on `devenv` so both Lean and Python tooling stay in sync.
 ## Repository layout
 
 ```
-README.md            ← project overview (this file)
-Succinct.lean        ← formalization of §§1.1–1.2
-2023-succinct-la.pdf ← source notes we are mechanizing
-lakefile.lean        ← Lean package definition
-lake-manifest.json   ← mathlib + dependency lockfile
-lean-toolchain       ← elan toolchain pin (Lean 4.25.0-rc2)
-devenv.nix           ← reproducible dev shell (elan, uv)
-pyproject.toml       ← Python deps (aristotlelib via uv)
-uv.lock              ← locked Python dependency graph
+README.md                 ← project overview (this file)
+Succinct.lean             ← barrel module
+Succinct/LinearAlgebra.lean
+Succinct/Vandermonde.lean
+Succinct/Codes/Core.lean
+Succinct/Codes/Hamming.lean
+Succinct/Codes/Distance.lean
+Succinct/Codes/EvalCode.lean
+2023-succinct-la.pdf      ← source notes we are mechanizing
+lakefile.lean             ← Lean package definition
+lake-manifest.json        ← mathlib + dependency lockfile
+lean-toolchain            ← elan toolchain pin (Lean 4.25.0-rc2)
+devenv.nix                ← reproducible dev shell (elan, uv)
+pyproject.toml            ← Python deps (aristotlelib via uv)
+uv.lock                   ← locked Python dependency graph
 ```
+
+## Module map
+
+- `Succinct.LinearAlgebra` — `Vec`, `Mat`, range/nullspace, bases.
+- `Succinct.Vandermonde` — evaluation points, Vandermonde matrices, polynomial evaluation as matrix–vector multiplies.
+- `Succinct.Codes.Core` — `LinearCode`, `encode`, repeat code helper.
+- `Succinct.Codes.Hamming` — ℓ₀/Hamming weight on vectors and sets.
+- `Succinct.Codes.Distance` — minimum nonzero weight (code distance).
+- `Succinct.Codes.EvalCode` — evaluation codes via Vandermonde generators.
+- `Succinct` — umbrella re-export for downstream users.
 
 ## Contributing
 
-1. Stay within `Succinct.lean` until we split modules (call out new sections at the top of the file).
-2. Before opening a PR, run both `lake build` and `uv run aristotle --help` (ensures the CLI entry point resolves).
-3. Reference `2023-succinct-la.pdf` section numbers in commit messages or docstrings so reviewers can map proof obligations back to the text.
+1. Import the specific `Succinct.*` module you need (or `Succinct` for convenience); keep new definitions in the most specific file.
+2. Before opening a PR, run `lake build` and `uv run aristotle --help` (ensures the CLI entry point resolves).
+3. Reference `2023-succinct-la.pdf` section numbers in comments or commits so reviewers can map proof obligations back to the text.
