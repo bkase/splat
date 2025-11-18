@@ -14,7 +14,7 @@ container_name = null;
 active_profiles = [ ];
 hostname = "Brandons-MacBook-Pro";
 username = "bkase";
-git_root = null;
+git_root = "/Users/bkase/Documents/lean-succinct";
 
         in {
         git-hooks.url = "github:cachix/git-hooks.nix";
@@ -41,7 +41,7 @@ container_name = null;
 active_profiles = [ ];
 hostname = "Brandons-MacBook-Pro";
 username = "bkase";
-git_root = null;
+git_root = "/Users/bkase/Documents/lean-succinct";
 
             devenv =
             if builtins.pathExists (devenv_dotfile_path + "/devenv.json")
