@@ -59,9 +59,27 @@ uv.lock                   ← locked Python dependency graph
 - `Succinct.Vandermonde` — evaluation points, Vandermonde matrices, polynomial evaluation as matrix–vector multiplies.
 - `Succinct.Codes.Core` — `LinearCode`, `encode`, repeat code helper.
 - `Succinct.Codes.Hamming` — ℓ₀/Hamming weight on vectors and sets.
-- `Succinct.Codes.Distance` — minimum nonzero weight (code distance).
-- `Succinct.Codes.EvalCode` — evaluation codes via Vandermonde generators.
+- `Succinct.Prob.Implication` — probabilistic implication calculus (paper §1.4), chaining/contrapositive/independence rules.
+- `Succinct.Prob.Examples` — tiny sanity checks for the `⟹[μ]_` notation.
 - `Succinct` — umbrella re-export for downstream users.
+
+### Probabilistic implication at a glance
+
+```
+open Succinct.Prob
+
+section
+  variable {Ω} [MeasurableSpace Ω]
+  variable (μ : Measure Ω) [IsProbabilityMeasure μ]
+  variable {A B C : Set Ω} {p q : ℝ≥0∞}
+
+  example (h₁ : A ⟹[μ]_(p) B) (h₂ : B ⟹[μ]_(q) C) : A ⟹[μ]_(p+q) C :=
+    chain (μ:=μ) h₁ h₂
+
+  example (h : A ⟹[μ]_(p) B) : Bᶜ ⟹[μ]_(p) Aᶜ :=
+    contrapositive (μ:=μ) h
+end
+```
 
 ## Contributing
 
