@@ -512,4 +512,56 @@ lemma evalCode_encode_eq_eval {m n : ℕ} (α : EvalPoints m F) (x : Vec F n) :
 
 end EvalCode
 
+section ExampleCodes
+
+  variable [DecidableEq F]
+
+  /-- Generator matrix for the k‑repeated code: `k` vertical copies of `Iₙ`. -/
+def repeatGen (k n : ℕ) : Mat F (k * n) n :=
+  fun (i : Fin (k * n)) (j : Fin n) => if i.val % n = j.val then (1 : F) else 0
+
+  /-- The k‑repeated linear code of length `k*n` and dimension `n`. -/
+def repeatCode (k n : ℕ) : LinearCode F :=
+  { m := k * n, n := n, G := repeatGen k n }
+
+/-- Encoding with the k-repeated code simply repeats each coordinate every `n` steps. -/
+lemma repeatCode_encode (k n : ℕ) (hn : 0 < n) (x : Vec F n) :
+    (repeatCode k n) ⇀ₑ x
+      = fun i : Fin (k * n) => x ⟨i.val % n, Nat.mod_lt _ hn⟩ := by
+  classical
+  funext i
+  let j0 : Fin n := ⟨i.val % n, Nat.mod_lt _ hn⟩
+  have hsum :
+      (∑ j : Fin n, repeatGen k n i j * x j : F) = x j0 := by
+    classical
+    -- rewrite the row as a Kronecker delta at column `j0`
+    have hcond : ∀ j : Fin n, (i.val % n = j.val) = (j = j0) := by
+      intro j
+      apply propext
+      constructor
+      · intro h; apply Fin.ext; simp [h.symm, j0]
+      · intro h; simpa [j0] using congrArg Fin.val h.symm
+    have hdelta :
+        (∑ j : Fin n, repeatGen (F := F) k n i j * x j)
+          = ∑ j : Fin n, (if j = j0 then (1 : F) else 0) * x j := by
+      refine Finset.sum_congr rfl ?hpoint
+      intro j _; simp [repeatGen, hcond j]
+    have hsingle :
+        (∑ j : Fin n, (if j = j0 then (1 : F) else 0) * x j)
+          = x j0 := by
+      classical
+      refine Finset.sum_eq_single j0
+        (by
+          intro j hj hjne
+          have hjne' : j ≠ j0 := hjne
+          simp [hjne'])
+        (by
+          intro hj0not
+          have : False := hj0not (by simp)
+          contradiction)
+    -- combine the two rewrites
+    exact hdelta.trans hsingle
+  simp [repeatCode, encode, Mat.mulVec_apply, hsum, j0]
+end ExampleCodes
+
 end Codes
