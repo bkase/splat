@@ -47,13 +47,7 @@ lemma chain {Ω} [MeasurableSpace Ω] {μ : Measure Ω}
     {A B C : Set Ω} {p p' : ℝ≥0∞}
     (h₁ : A ⟹[μ]_(p) B) (h₂ : B ⟹[μ]_(p') C) :
     A ⟹[μ]_(p + p') C := by
-  have hsubset : A ∩ Cᶜ ⊆ (A ∩ Bᶜ) ∪ (B ∩ Cᶜ) := by
-    intro ω hω
-    rcases hω with ⟨hA, hC⟩
-    by_cases hB : ω ∈ B
-    · exact Or.inr ⟨hB, hC⟩
-    · have hB' : ω ∈ Bᶜ := by simpa using hB
-      exact Or.inl ⟨hA, hB'⟩
+  have hsubset : A ∩ Cᶜ ⊆ (A ∩ Bᶜ) ∪ (B ∩ Cᶜ) := by grind
   calc
     μ (A ∩ Cᶜ)
         ≤ μ ((A ∩ Bᶜ) ∪ (B ∩ Cᶜ)) := measure_mono hsubset
