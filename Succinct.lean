@@ -14,6 +14,10 @@ import Succinct.Codes.Hadamard
 import Succinct.Codes.SingletonKernel
 import Succinct.Codes.KroneckerDistance
 import Succinct.Codes.Aristotle.PolynomialZeroViaEvaluation
+import Succinct.Checks.Sparsity
+import Succinct.Checks.Zero
+import Succinct.Checks.MatrixZero
+import Succinct.Checks.SparsityZero
 
 /-!
 # Succinct: Preliminaries for Linear Codes and Evaluation Maps
