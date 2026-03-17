@@ -161,6 +161,7 @@ This shows that evaluating p at ω is equivalent to:
 - Plus ω times evaluating p_odd at ω²
 
 Proved by: Aristotle (project 142dd003-7596-4eb9-8fcf-c901eddb7e06)
+This is the even/odd split used in §4.2 setup (`V = T₁V' ⊕ T₂V'`).
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun> -/
 theorem poly_decomposition_eval
     (eval_points : Fin k → F)
@@ -385,6 +386,7 @@ Given evaluations at ω and -ω, extract the even part:
 This assumes characteristic ≠ 2.
 
 Proved by: Aristotle (project 08bfdcc9-9b59-4fb4-9f1a-5a053997986d)
+This is the §4.2 squared-domain step from the pair `(ω, -ω)`.
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun> -/
 lemma extract_even_from_coset
     (coeffs : Fin n → F)
@@ -418,6 +420,7 @@ Given evaluations at ω and -ω, extract the odd part:
 This assumes characteristic ≠ 2 and ω ≠ 0.
 
 Proved by: Aristotle (project 08bfdcc9-9b59-4fb4-9f1a-5a053997986d)
+This is the odd-part side of the same §4.2 squared-domain step.
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun> -/
 lemma extract_odd_from_coset
     (coeffs : Fin n → F)
@@ -509,6 +512,7 @@ Statement: For any challenge α, if v = reedSolomonEval ω coeffs,
 then fold(v, α) is in the folded Reed-Solomon code.
 
 Proved by: Aristotle (project 906145d5-98db-4f11-9b7c-5bcf1ce9176b)
+This is the completeness side of the §4.2 one-step reduction.
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun> -/
 theorem fri_completeness
     (eval_points : Fin k → F)

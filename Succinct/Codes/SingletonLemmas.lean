@@ -91,7 +91,7 @@ lemma exists_nonzero_mem_kernel_of_rows
     intro hL_injective
     have := Fintype.card_le_of_injective L hL_injective
     simp +zetaDelta at *
-    exact this.not_lt (pow_lt_pow_right₀ (Fintype.one_lt_card) hS)
+    exact not_lt_of_ge this (pow_lt_pow_right₀ (Fintype.one_lt_card) hS)
   simp_all +decide [Function.Injective]
   obtain ⟨x, y, hxy, hne⟩ := h_not_injective
   use x - y

@@ -164,7 +164,9 @@ Proof sketch:
 - Uniqueness: If X = Y₁ + Ξ₁ = Y₂ + Ξ₂, then Y₁ - Y₂ = Ξ₂ - Ξ₁
 - Left side is in V (columns in V), right side has < d' nonzero rows
 - By subspace distance property, both sides must be 0
-- Therefore Y₁ = Y₂ and Ξ₁ = Ξ₂ -/
+- Therefore Y₁ = Y₂ and Ξ₁ = Ξ₂
+This is the unique-split step from §3.2.3 proof part two
+(`xᵢ = yᵢ + ξᵢ` inside the decoding radius). -/
 lemma unique_decoding_radius
     (V : Submodule F (Vec F k))
     (X : Mat F k n)
@@ -246,7 +248,9 @@ Proof sketch:
 - So GY has at least |R| zero coordinates
 - Weight of GY ≤ m - |R| < m - (m - d) = d
 - But G has distance d, so any nonzero codeword has weight ≥ d
-- Contradiction: GY is nonzero but has weight < d -/
+- Contradiction: GY is nonzero but has weight < d
+This is the final contradiction step in §3.2.3 proof part two
+(the case `|R| > m - d` cannot happen). -/
 lemma subspace_distance_contradiction
     (G : Mat F m 2) (d : ℕ)
     (h_dist : codeHasDistanceAtLeast G d)

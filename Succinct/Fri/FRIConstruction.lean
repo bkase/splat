@@ -212,6 +212,7 @@ This is true because each folded coordinate depends on at most 2
 coordinates of e, so the support can't grow.
 
 Reference: 2023-succinct-la.pdf, Section 4.2
+This is the proximity part of the §4.2 one-step reduction.
 
 PROVED by Aristotle (project: a509c06c-b2f4-463b-a299-63d7144102cb). -/
 theorem fri_folding_preserves_proximity
@@ -1006,6 +1007,7 @@ For fixed vectors v ≠ w, the set of α values for which fold(v) = fold(w) has
 cardinality at most k/2.
 
 This is the version used in FRI soundness, where v is far from the code and w ∈ V.
+This is the bad-challenge bound used in §4.2 soundness accounting.
 
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
