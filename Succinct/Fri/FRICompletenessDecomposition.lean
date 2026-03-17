@@ -494,6 +494,76 @@ It shows: reedSolomonEval folded_eval_points (coeffsFold coeffs α) j =
            α * reedSolomonEval folded_eval_points (coeffsOdd coeffs) j
 -/
 
+/-- Folding an honest Reed-Solomon evaluation matches evaluation with folded coefficients. -/
+lemma friFold_reedSolomonEval_eq_folded_eval
+    (eval_points : Fin k → F)
+    (folded_eval_points : Fin (k / 2) → F)
+    (coeffs : Fin n → F)
+    (α : F)
+    (hk : k > 0)
+    (h_coset_structure : ∀ j : Fin (k / 2),
+      eval_points ⟨2 * j.val, by have h2 : j.val < k / 2 := j.2; omega⟩ ^ 2 =
+      folded_eval_points j)
+    (h_coset_neg : ∀ j : Fin (k / 2),
+      eval_points ⟨2 * j.val + 1, by have h2 : j.val < k / 2 := j.2; omega⟩ =
+      -eval_points ⟨2 * j.val, by have h2 : j.val < k / 2 := j.2; omega⟩)
+    (h_nonzero : ∀ i : Fin k, eval_points i ≠ 0)
+    (h2 : (2 : F) ≠ 0) :
+    friFold (reedSolomonEval eval_points coeffs) α eval_points hk =
+      reedSolomonEval folded_eval_points (coeffsFold coeffs α) := by
+  ext j
+  let i1 : Fin k := ⟨2 * j.val, by have h : j.val < k / 2 := j.2; omega⟩
+  let i2 : Fin k := ⟨2 * j.val + 1, by have h : j.val < k / 2 := j.2; omega⟩
+  let ω : F := eval_points i1
+  let E : F := reedSolomonEval folded_eval_points (coeffsEven coeffs) j
+  let O : F := reedSolomonEval folded_eval_points (coeffsOdd coeffs) j
+  have hsq : ω ^ 2 = folded_eval_points j := by
+    simpa [ω, i1] using h_coset_structure j
+  have hωneg : eval_points i2 = -ω := by
+    simpa [ω, i1, i2] using h_coset_neg j
+  have h_eval_pos :
+      reedSolomonEval eval_points coeffs i1 = E + ω * O := by
+    have hsplit := eval_split_even_odd_core (coeffs := coeffs) (x := ω)
+    simpa [E, O, reedSolomonEval, hsq, ω, i1] using hsplit
+  have h_eval_neg :
+      reedSolomonEval eval_points coeffs i2 = E - ω * O := by
+    have hsplit := eval_split_even_odd_core (coeffs := coeffs) (x := -ω)
+    have h_even_neg :
+        (∑ j : Fin ((n + 1) / 2), coeffsEven coeffs j * ((-ω) ^ 2) ^ (j : ℕ)) = E := by
+      simpa [E, reedSolomonEval, hsq, neg_sq]
+    have h_odd_neg :
+        (∑ j : Fin (n / 2), coeffsOdd coeffs j * ((-ω) ^ 2) ^ (j : ℕ)) = O := by
+      simpa [O, reedSolomonEval, hsq, neg_sq]
+    calc
+      reedSolomonEval eval_points coeffs i2
+          = (∑ j : Fin n, coeffs j * (-ω) ^ (j : ℕ)) := by
+              simp [reedSolomonEval, hωneg, ω, i2]
+      _ = (∑ j : Fin ((n + 1) / 2), coeffsEven coeffs j * ((-ω) ^ 2) ^ (j : ℕ)) +
+            (-ω) * (∑ j : Fin (n / 2), coeffsOdd coeffs j * ((-ω) ^ 2) ^ (j : ℕ)) := by
+              simpa using hsplit
+      _ = E + (-ω) * O := by rw [h_even_neg, h_odd_neg]
+      _ = E - ω * O := by ring
+  have h_alg :
+      ((E + ω * O) + (E - ω * O)) / 2 + α * ((E + ω * O) - (E - ω * O)) / (2 * ω) =
+        E + α * O := by
+    simpa using friFold_algebraic_identity (E := E) (O := O) (ω := ω) (α := α)
+      (hω := by simpa [ω, i1] using h_nonzero i1) (h2 := h2)
+  have h_fold_j :
+      friFold (reedSolomonEval eval_points coeffs) α eval_points hk j = E + α * O := by
+    have h_point := friFold_pointwise (v := reedSolomonEval eval_points coeffs) (α := α)
+      (eval_points := eval_points) (hk := hk) (j := j)
+    rw [show friFold (reedSolomonEval eval_points coeffs) α eval_points hk j =
+          (reedSolomonEval eval_points coeffs i1 + reedSolomonEval eval_points coeffs i2) / 2 +
+            α * (reedSolomonEval eval_points coeffs i1 - reedSolomonEval eval_points coeffs i2) /
+              (2 * ω) by
+          simpa [i1, i2, ω] using h_point]
+    rw [h_eval_pos, h_eval_neg]
+    simpa using h_alg
+  have h_coeffs_j :
+      reedSolomonEval folded_eval_points (coeffsFold coeffs α) j = E + α * O := by
+    simpa [E, O] using coeffsFold_eval (folded_eval_points := folded_eval_points) coeffs α j
+  exact h_fold_j.trans h_coeffs_j.symm
+
 /-- **THEOREM**: FRI Completeness
 
 If v is in the Reed-Solomon code with degree bound n,
@@ -528,13 +598,16 @@ theorem fri_completeness
       eval_points ⟨2 * j.val + 1, by have h2 : j.val < k / 2 := j.2; omega⟩ =
       -eval_points ⟨2 * j.val, by have h2 : j.val < k / 2 := j.2; omega⟩)
     (h_nonzero : ∀ i : Fin k, eval_points i ≠ 0)
-    (h_folded_eval :
-      friFold (reedSolomonEval eval_points coeffs) α eval_points hk =
-      reedSolomonEval folded_eval_points (coeffsFold coeffs α)) :
+    (h2 : (2 : F) ≠ 0) :
     let v := reedSolomonEval eval_points coeffs
     let v_folded := friFold v α eval_points hk
     let n_folded := (n + 1) / 2
     v_folded ∈ foldedReedSolomonCode folded_eval_points n_folded := by
+  have h_folded_eval :
+      friFold (reedSolomonEval eval_points coeffs) α eval_points hk =
+        reedSolomonEval folded_eval_points (coeffsFold coeffs α) :=
+    friFold_reedSolomonEval_eq_folded_eval eval_points folded_eval_points coeffs α hk
+      h_coset_structure h_coset_neg h_nonzero h2
   dsimp [foldedReedSolomonCode]
   exact ⟨coeffsFold coeffs α, h_folded_eval⟩
 
