@@ -1,6 +1,8 @@
 import Mathlib.Tactic
+import Mathlib.Probability.UniformOn
 import Succinct.LinearAlgebra
 import Succinct.Codes.Hamming
+import Succinct.Prob.Implication
 import Succinct.Fri.FRICompletenessDecomposition
 import Succinct.Fri.Aristotle.BadAlphaSetFiniteGated
 
@@ -593,6 +595,8 @@ variable {F : Type*} [Field F] [DecidableEq F]
 
 variable {k : ℕ}
 
+open scoped ENNReal
+
 section FRIFoldingAnalysis
 
 variable {F : Type*} [Field F] [DecidableEq F]
@@ -1142,103 +1146,155 @@ lemma folding_proximity_contrapositive
   rw [heq] at h
   exact h_far h
 
-/-- **THEOREM**: FRI Single Round Soundness (Local Proof using fri_distance_accumulation)
-
-If fold(v) ∈ V_next, then v is close to V.
-
-More precisely: if fold(v) is 0-close to V_next (i.e., fold(v) ∈ V_next),
-then v is (k-d)-close to V, where d is the minimum distance of V.
-
-This is the core soundness theorem for a single FRI round. It shows that
-if the prover "passes" the folding check (fold(v) is in the folded code),
-then their original vector v was close to the original code V.
-
-Proof strategy: By contrapositive using fri_distance_accumulation.
-If v were (k-d)-far from V, then fold(v) would be (k-d+1)-far from V_next.
-Since fold(v) ∈ V_next (0-close), v cannot be (k-d)-far.
-
-Note: Requires k ≥ d to ensure k - d is meaningful. -/
+/-- One random challenge catches a wrong fold against a fixed witness `w`
+with error at most `(k/2)/|F|`. -/
 theorem fri_single_round_soundness
+    [Fintype F]
+    [MeasurableSpace F]
+    [MeasurableSingletonClass F]
     (V : Submodule F (Vec F k))
-    (d : ℕ)
-    (h_dist : ∀ v ∈ V, v ≠ 0 → ∥v∥₀ ≥ d)
-    (hk_d : k ≥ d)
     (v : Vec F k)
-    (α : F)
+    (w : Vec F k)
+    (hwV : w ∈ V)
+    (q : ℕ)
     (eval_points : Fin k → F)
     (hk : k > 0)
     (hk_even : k % 2 = 0)
-    (h_pass : ∃ w ∈ V, friFold v α eval_points hk = friFold w α eval_points hk) :
-    qCloseToSubspaceVec v V k := by
-  rcases h_pass with ⟨w, hwV, _⟩
-  refine ⟨w, hwV, ?_⟩
-  unfold weightVec
-  rw [Fintype.card_subtype]
-  simpa using
-    (Finset.card_filter_le (p := fun i : Fin k => (v - w) i ≠ 0)
-      (s := (Finset.univ : Finset (Fin k))))
+    (hω : ∀ i : Fin k, eval_points i ≠ 0)
+    (h2 : (2 : F) ≠ 0) :
+    Succinct.Prob.ProbImpEv (ProbabilityTheory.uniformOn (Set.univ : Set F))
+      { α : F | friFold v α eval_points hk = friFold w α eval_points hk }
+      { α : F | qCloseToSubspaceVec v V q }
+      ((↑(k / 2) : ℝ≥0∞) / Fintype.card F) := by
+  unfold Succinct.Prob.ProbImpEv
+  by_cases h_close : qCloseToSubspaceVec v V q
+  · simp [h_close]
+  · have hvw : v ≠ w := by
+      intro hvw'
+      apply h_close
+      have hvV : v ∈ V := by simpa [hvw'] using hwV
+      refine ⟨v, hvV, ?_⟩
+      simpa [weightVec] using (Nat.zero_le q)
+    let Bad : Set F := { α : F | friFold v α eval_points hk = friFold w α eval_points hk }
+    have h_card : Fintype.card Bad ≤ k / 2 := by
+      simpa [Bad] using bad_alpha_set_finite_of_ne v w eval_points hk hk_even hω h2 hvw
+    have h_count_bad : MeasureTheory.Measure.count Bad = (Fintype.card Bad : ℝ≥0∞) := by
+      classical
+      let hs : Bad.Finite := Set.toFinite Bad
+      rw [MeasureTheory.Measure.count_apply_finite Bad hs]
+      simpa using hs.card_toFinset
+    have h_card_en : (Fintype.card Bad : ℝ≥0∞) ≤ (↑(k / 2) : ℝ≥0∞) := by
+      exact_mod_cast h_card
+    have h_compl :
+        ({ α : F | qCloseToSubspaceVec v V q } : Set F)ᶜ = Set.univ := by
+      ext α
+      simp [h_close]
+    rw [h_compl, Set.inter_univ]
+    calc
+      ProbabilityTheory.uniformOn (Set.univ : Set F)
+          Bad
+          = MeasureTheory.Measure.count Bad /
+              Fintype.card F := by
+              simpa using (ProbabilityTheory.uniformOn_univ
+                (s := Bad))
+      _ = (Fintype.card Bad : ℝ≥0∞) /
+            Fintype.card F := by
+              rw [h_count_bad]
+      _ ≤ ((↑(k / 2) : ℝ≥0∞) / Fintype.card F) := by
+            exact ENNReal.div_le_div_right h_card_en _
 
 end FRISingleRoundSoundness
 
 section FRIMultiRoundSoundness
 
-variable {F : Type*} [Field F] [DecidableEq F]
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal
 
-/-- **THEOREM**: FRI Multi-Round Soundness - Base Case (0 rounds)
+variable {F : Type*} [Field F] [DecidableEq F] [Fintype F]
+variable [MeasurableSpace F] [MeasurableSingletonClass F]
 
-With 0 rounds of FRI folding, if the prover "passes" (v ∈ V),
-then v is 0-close to V. This is the base case for induction. -/
-theorem fri_multi_round_soundness_base
-    (k : ℕ)
-    (V : Submodule F (Vec F k))
-    (v : Vec F k)
-    (h_pass : v ∈ V) :
-    qCloseToSubspaceVec v V 0 := by
-  use v, h_pass
-  simp [weightVec]
+variable {k : ℕ}
 
-/-- **THEOREM**: FRI Multi-Round Soundness
-
-After l rounds of FRI folding, if the prover passes all rounds (final check passes),
-then the initial vector v_0 is (l * (k/2^l - d_l))-close to V_0, where d_l is the
-minimum distance of the final folded code.
-
-This is a simplified version that uses the single-round soundness iteratively.
-Each round of soundness gives a (k_i - d_i)-close bound, where k_i is the
-current length and d_i is the current minimum distance.
-
-For Reed-Solomon codes, the distance properties are preserved under folding,
-so d_i ≥ d_0 for all i. This gives a total bound of approximately l * (k/2^l - d).
-
-Note: This is a simplified formulation. A complete formalization would track
-all the folded codes and their distance properties. -/
+/-- Repeating the same fold check with `l` independent challenges gives
+error `((k/2)^l)/(|F|^l)` for a fixed witness `w`. -/
 theorem fri_multi_round_soundness
     (l : ℕ)
-    (hl : l > 0)
-    (k : ℕ)
+    (V : Submodule F (Vec F k))
+    (v : Vec F k)
+    (w : Vec F k)
+    (hwV : w ∈ V)
+    (q : ℕ)
+    (eval_points : Fin k → F)
     (hk : k > 0)
     (hk_even : k % 2 = 0)
-    (hk_pow : k ≥ 2^l)  -- Need enough elements to fold l times
-    (V : Submodule F (Vec F k))
-    (d : ℕ)
-    (h_dist : ∀ v ∈ V, v ≠ 0 → ∥v∥₀ ≥ d)
-    (hk_d : k ≥ d)
-    (v_0 : Vec F k)
-    (challenges : Fin l → F)
-    (eval_points : Fin k → F)
-    (h_pass_final : ∃ w ∈ V, friFold v_0 (challenges ⟨0, hl⟩) eval_points hk = friFold w (challenges ⟨0, hl⟩) eval_points hk) :
-    qCloseToSubspaceVec v_0 V k := by
-  -- For the single-round case (which we've already proved), this is just
-  -- fri_single_round_soundness. For multiple rounds, we would need to iterate.
-  --
-  -- The key insight is that fri_single_round_soundness already gives us
-  -- (k-d)-closeness from a single passing round. For multiple rounds,
-  -- we would get stronger bounds, but (k-d) is already a valid bound.
-  --
-  -- Since this theorem uses only the first challenge, it's essentially
-  -- single-round soundness. For true multi-round, we'd need to track
-  -- all the intermediate folded vectors and codes.
-  exact fri_single_round_soundness V d h_dist hk_d v_0 (challenges ⟨0, hl⟩) eval_points hk hk_even h_pass_final
+    (hω : ∀ i : Fin k, eval_points i ≠ 0)
+    (h2 : (2 : F) ≠ 0) :
+    Succinct.Prob.ProbImpEv (uniformOn (Set.univ : Set (Fin l → F)))
+      { ρ : Fin l → F | ∀ i : Fin l, friFold v (ρ i) eval_points hk = friFold w (ρ i) eval_points hk }
+      { ρ : Fin l → F | qCloseToSubspaceVec v V q }
+      (((↑(k / 2) : ℝ≥0∞) ^ l) / (Fintype.card F ^ l)) := by
+  unfold Succinct.Prob.ProbImpEv
+  by_cases h_close : qCloseToSubspaceVec v V q
+  · simp [h_close]
+  · have hvw : v ≠ w := by
+      intro hvw'
+      apply h_close
+      have hvV : v ∈ V := by simpa [hvw'] using hwV
+      refine ⟨v, hvV, ?_⟩
+      simpa [weightVec] using (Nat.zero_le q)
+    let Bad : Set F := { α : F | friFold v α eval_points hk = friFold w α eval_points hk }
+    let All : Set (Fin l → F) := { ρ : Fin l → F | ∀ i : Fin l, ρ i ∈ Bad }
+    have h_event_eq :
+        { ρ : Fin l → F | ∀ i : Fin l, friFold v (ρ i) eval_points hk = friFold w (ρ i) eval_points hk } = All := by
+      ext ρ
+      simp [All, Bad]
+    have h_bad_card : Fintype.card { α : F // α ∈ Bad } ≤ k / 2 := by
+      simpa [Bad] using bad_alpha_set_finite_of_ne v w eval_points hk hk_even hω h2 hvw
+    have h_all_card : Fintype.card All = (Fintype.card { α : F // α ∈ Bad }) ^ l := by
+      classical
+      let e : All ≃ (Fin l → { α : F // α ∈ Bad }) :=
+        { toFun := fun x i => ⟨x.1 i, x.2 i⟩
+          invFun := fun f => ⟨fun i => (f i).1, by intro i; exact (f i).2⟩
+          left_inv := by
+            intro x
+            cases x
+            rfl
+          right_inv := by
+            intro f
+            funext i
+            apply Subtype.ext
+            rfl }
+      calc
+        Fintype.card All = Fintype.card (Fin l → { α : F // α ∈ Bad }) := Fintype.card_congr e
+        _ = (Fintype.card { α : F // α ∈ Bad }) ^ Fintype.card (Fin l) := Fintype.card_fun
+        _ = (Fintype.card { α : F // α ∈ Bad }) ^ l := by simp
+    have h_count_all : Measure.count All = (Fintype.card All : ℝ≥0∞) := by
+      classical
+      let hs : All.Finite := Set.toFinite All
+      rw [MeasureTheory.Measure.count_apply_finite All hs]
+      simpa using hs.card_toFinset
+    have h_compl :
+        ({ ρ : Fin l → F | qCloseToSubspaceVec v V q } : Set (Fin l → F))ᶜ = Set.univ := by
+      ext ρ
+      simp [h_close]
+    rw [h_event_eq, h_compl, Set.inter_univ]
+    calc
+      uniformOn (Set.univ : Set (Fin l → F)) All
+          = Measure.count All / Fintype.card (Fin l → F) := by
+            simpa using (ProbabilityTheory.uniformOn_univ (s := All))
+      _ = (Fintype.card All : ℝ≥0∞) / Fintype.card (Fin l → F) := by
+            rw [h_count_all]
+      _ = ((Fintype.card { α : F // α ∈ Bad } : ℝ≥0∞) ^ l) / (Fintype.card F ^ l) := by
+            rw [h_all_card]
+            simp [Fintype.card_fun]
+      _ ≤ (((↑(k / 2) : ℝ≥0∞) ^ l) / (Fintype.card F ^ l)) := by
+            have h_bad_card_en :
+                (Fintype.card { α : F // α ∈ Bad } : ℝ≥0∞) ≤ (↑(k / 2) : ℝ≥0∞) := by
+              exact_mod_cast h_bad_card
+            have h_pow :
+                (Fintype.card { α : F // α ∈ Bad } : ℝ≥0∞) ^ l ≤ (↑(k / 2) : ℝ≥0∞) ^ l := by
+              exact pow_le_pow_left' h_bad_card_en l
+            exact ENNReal.div_le_div_right h_pow _
 
 end FRIMultiRoundSoundness
 
