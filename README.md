@@ -4,9 +4,26 @@ A Lean 4 formalization of the notes `2023-succinct-la.pdf`, capturing the linear
 
 ## Project status
 
-- ✅ Section 1.1 (vectors, matrices, subspaces) is formalized with idiomatic mathlib constructions.
-- ⚙️ Section 1.2 in progress; Vandermonde/evaluation scaffolding, linear codes, weights, and distance are organized as modules.
-- 📄 The source notes live beside the code as `2023-succinct-la.pdf` for easy cross-checking.
+### Completed sections
+
+- ✅ **Section 1.1**: Vectors, matrices, subspaces with idiomatic mathlib constructions
+- ✅ **Section 1.2**: Vandermonde matrices, evaluation maps, linear codes, weights, distance
+- ✅ **Section 1.3**: Coding theory foundations
+  - Reed-Solomon codes with Lagrange interpolation and degree bounds
+  - Hadamard codes with distance formula via inner product counting
+  - Singleton bound and kernel characterization
+  - Kronecker product codes with tensor distance analysis
+- ✅ **Section 1.4**: Probabilistic implication calculus (`Succinct.Prob.Implication`)
+- ✅ **Section 3**: Probabilistic checks
+  - Sparsity checking with geometric decay bounds
+  - Zero-testing for vectors and polynomials via random evaluation
+  - Matrix zero-testing via row sampling
+  - Product measure projection for multi-round protocols
+- ✅ **Section 4**: FRI (Fast Reed-Solomon IOP) soundness
+  - Subspace distance theory relating matrix proximity to linear subspaces
+  - Unique decoding radius argument via contrapositive
+  - FRI construction: folding operation, bad alpha set finiteness
+  - Polynomial decomposition for completeness
 
 ## Getting started
 
