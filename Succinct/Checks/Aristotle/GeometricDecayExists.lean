@@ -51,6 +51,8 @@ theorem geometric_decay_exists_nat
       rw [ ENNReal.div_lt_iff ] <;> norm_num [ hd_pos, hle ];
       grind;
     exact ENNReal.tendsto_pow_atTop_nhds_zero_iff.mpr h_lt_one
-  exact absurd ( h_archimedean.eventually ( gt_mem_nhds hε_pos ) ) fun h => by obtain ⟨ t, ht ⟩ := h.exists; exact ht.not_le ( le_of_lt ( h_contra t ) ) ;
+  exact absurd ( h_archimedean.eventually ( gt_mem_nhds hε_pos ) ) fun h => by
+    obtain ⟨ t, ht ⟩ := h.exists
+    exact not_le_of_gt ht (le_of_lt (h_contra t))
 
 end MainTheorem

@@ -213,9 +213,8 @@ theorem polynomial_zero_via_coefficients {p : Polynomial F} (hDeg : p.natDegree 
     unfold polyOfVec polyOfVecCoeffs
     aesop
   · -- Backward direction: if p = 0, then all coefficients are zero
-    intro h_zero
+    intro h_zero j
     -- If p = 0, then all its coefficients are zero by definition
-    intro j
     rw [h_zero]
     rfl
 
