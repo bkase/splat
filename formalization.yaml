@@ -1,0 +1,143 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml v0.4.
+version: "v0.4"
+
+project:
+  name: "SPLAT — Succinct Proofs and Linear Algebra, formalized"
+  description: >-
+    A Lean 4 / Mathlib formalization of the linear-algebra toolkit for
+    succinct proof systems developed by Evans and Angeris in
+    "Succinct Proofs and Linear Algebra" (IACR eprint 2023/1478):
+    linear codes over finite fields with Reed-Solomon, Hadamard, and
+    Kronecker-product constructions; the probabilistic implication
+    calculus of Section 1.4; the zero, sparsity, matrix, and polynomial
+    proximity checks of Section 3; and the FRI low-degree test analysis of
+    Section 4, including the one-step folding proximity reduction and the
+    bad-challenge (bad-alpha) bound, which are the two headline results
+    compared by the Palomar Comparator.
+  authors:
+    - "François Garillot"
+    - "Brandon Kase"
+  license: "MIT"
+  responsible_maintainers:
+    - "François Garillot"
+
+classification:
+  arxiv: ["cs.CR"]
+  msc2020: ["94A60", "11T71"]
+
+sources:
+  - title: "Succinct Proofs and Linear Algebra"
+    authors:
+      - "Alex Evans"
+      - "Guillermo Angeris"
+    id: "https://eprint.iacr.org/2023/1478"
+    type: "paper"
+    location: "https://eprint.iacr.org/2023/1478"
+    relationship: "formalizes"
+    note: >-
+      The submitted development formalizes the paper's Sections 1.1-1.4
+      (vectors, matrices, subspaces, Vandermonde matrices, linear codes,
+      weights and distances, and the probabilistic implication calculus),
+      Section 3 (sparsity, zero, matrix-zero, and polynomial-zero
+      proximity checks), and the core one-step reduction of Section 4.2
+      (FRI folding preserves proximity; the bad-challenge set for
+      distinct vectors has cardinality at most k/2), together with
+      single-round FRI soundness. The full multi-round protocol
+      assembly is not formalized end to end.
+    license: "unknown"
+    author_endorsement: "not-contacted"
+
+related_formalizations: []
+
+status:
+  scope: >-
+    Formalized: the paper's linear-algebra preliminaries, the
+    probabilistic implication calculus, the Section 3 proximity checks,
+    the FRI fold, the one-step proximity reduction, the bad-alpha bound,
+    and single-round FRI soundness, all over arbitrary finite fields.
+    Not formalized: the complete multi-round FRI protocol with
+    commitment semantics and the end-to-end soundness theorem of the
+    paper's Section 4; the paper's closing conjecture on proximity
+    testing with linear error-correcting codes. The auxiliary theorem
+    `SuccinctProofs.evalCode_injective_of_distinct_false`, a recorded
+    refutation of an initially claimed (false) injectivity statement,
+    is stated over `Type` rather than `Type*`.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: []
+  main_results:
+    - "SPLAT.fri_folding_preserves_proximity"
+    - "SPLAT.bad_alpha_set_bound"
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["Aristotle (Harmonic)"]
+      framework: "Aristotle (https://aristotle.harmonic.fun)"
+      tool_setup: >-
+        Most original proof search was performed by the Aristotle agent
+        of Harmonic, as recorded in the file headers. The development
+        was subsequently ported to Lean v4.36.0 / Mathlib v4.36.0 and
+        converted to the Lean module system with further agent
+        assistance; the port was reviewed and completed manually.
+      cost:
+        wall_time: "not tracked"
+        spend_usd: "not tracked"
+        hardware: "local machine"
+      prompting_notes: "n/a"
+  spend_usd: "not tracked"
+  notes: >-
+    Human authors directed the formalization scope and reviewed the
+    agent-produced proofs; no proof was accepted without compiling
+    against Mathlib at the pinned revision.
+
+fidelity:
+  divergences: >-
+    The two compared statements phrase the folded code as a set rather
+    than as the submodule literal used internally; this is definitional.
+    All other statements follow the paper's definitions over arbitrary
+    finite fields, with the hypotheses the paper assumes (distinct,
+    nonzero evaluation points; even domain length; 2 ≠ 0) stated
+    explicitly rather than assumed as axioms.
+
+review:
+  status: "self-assessed"
+  reviewers:
+    - "François Garillot"
+  notes: >-
+    Statements were audited against the paper's Section 4.2 by the
+    responsible maintainer; proofs compile with only the three standard
+    Lean axioms and were checked to contain no `sorry` and no
+    `native_decide`.
+
+alignment:
+  namespace: "SPLAT"
+  statements:
+    - source: "Section 4.2, one-step reduction (proximity part)"
+      lean: "SPLAT.fri_folding_preserves_proximity"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Challenge.lean restates the theorem with self-contained
+        definitions; Solution.lean proves it from
+        SuccinctProofs.fri_folding_preserves_proximity in
+        Succinct/Fri/FRIConstruction.lean, which corresponds to the
+        paper's argument that the fold of a q-close vector is q-close
+        to the folded code.
+    - source: "Section 4.2, bad-challenge bound (folding is injective for most alpha)"
+      lean: "SPLAT.bad_alpha_set_bound"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Challenge.lean restates the theorem with self-contained
+        definitions; Solution.lean proves it from
+        SuccinctProofs.bad_alpha_set_finite_of_ne in
+        Succinct/Fri/FRIConstruction.lean, which bounds by k/2 the
+        number of challenges alpha for which two distinct vectors have
+        equal FRI folds.
+
+acknowledgements: >-
+  Mathlib and its contributors; the Batteries, Aesop, and proof-widget
+  ecosystems; Harmonic's Aristotle agent, which produced the original
+  proofs under the direction of the authors.

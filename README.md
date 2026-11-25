@@ -1,6 +1,6 @@
 # SPLAT — Succinct Proofs and Linear Algebra Theorem-proven
 
-A Lean 4 formalization of the notes `2023-succinct-la.pdf`, capturing the linear-algebraic preliminaries that underpin succinct argument systems. The project now lives under the barrel module `Succinct.lean` with a small family of focused submodules.
+A Lean 4 formalization of [*Succinct Proofs and Linear Algebra*](https://eprint.iacr.org/2023/1478) (Alex Evans and Guillermo Angeris, IACR eprint 2023/1478; the paper is kept locally as `2023-succinct-la.pdf`), capturing the linear-algebraic preliminaries that underpin succinct argument systems. The project now lives under the barrel module `Succinct.lean` with a small family of focused submodules.
 
 ## Project status
 
@@ -32,7 +32,7 @@ We standardize on `devenv` so both Lean and Python tooling stay in sync.
 ### With Nix + devenv
 
 1. Install [devenv.sh](https://devenv.sh/getting-started/).
-2. Run `devenv shell` from the repo root. The shell hook installs the Lean toolchain (from `lean-toolchain`, currently `leanprover/lean4:v4.25.0-rc2`), configures elan, and exposes `lake`, `lean`, and `uv`.
+2. Run `devenv shell` from the repo root. The shell hook installs the Lean toolchain (from `lean-toolchain`, currently `leanprover/lean4:v4.36.0`), configures elan, and exposes `lake`, `lean`, and `uv`.
 3. Optional scripts:
    - `devenv task build` → `lake build`
    - `devenv task check` → `lean Succinct.lean`
@@ -61,10 +61,15 @@ Succinct/Codes/Core.lean
 Succinct/Codes/Hamming.lean
 Succinct/Codes/Distance.lean
 Succinct/Codes/EvalCode.lean
+Challenge.lean            ← Palomar Challenge module (self-contained statements)
+Solution.lean             ← Palomar Solution module (proofs)
+comparator.json           ← Palomar Comparator configuration
+formalization.yaml        ← Palomar entry metadata
+LICENSE                   ← MIT
 2023-succinct-la.pdf      ← source notes we are mechanizing
 lakefile.lean             ← Lean package definition
 lake-manifest.json        ← mathlib + dependency lockfile
-lean-toolchain            ← elan toolchain pin (Lean 4.25.0-rc2)
+lean-toolchain            ← elan toolchain pin (Lean 4.36.0)
 devenv.nix                ← reproducible dev shell (elan, uv)
 pyproject.toml            ← Python deps (aristotlelib via uv)
 uv.lock                   ← locked Python dependency graph
@@ -103,3 +108,14 @@ end
 1. Import the specific `Succinct.*` module you need (or `Succinct` for convenience); keep new definitions in the most specific file.
 2. Before opening a PR, run `lake build` and `uv run aristotle --help` (ensures the CLI entry point resolves).
 3. Reference `2023-succinct-la.pdf` section numbers in comments or commits so reviewers can map proof obligations back to the text.
+
+## Palomar registry layout
+
+This repository is prepared for submission to the [Palomar registry](https://palomar-registry.org). The root carries the four required artifacts:
+
+- `Challenge.lean` — self-contained, Mathlib-only restatements of the two headline results (FRI one-step proximity reduction and the bad-challenge bound from paper §4.2), with the support definitions `SPLAT.weightVec` and `SPLAT.friFold` repeated body-for-body (the fold's index bounds are re-proved in term mode so the Challenge's and Solution's copies elaborate to identical constants; the values are definitionally the development's by proof irrelevance).
+- `Solution.lean` — the same statements proved from the `Succinct` development (`SuccinctProofs.fri_folding_preserves_proximity`, `SuccinctProofs.bad_alpha_set_finite_of_ne`); the duplicated definitions are definitionally the Challenge's, so the defeq judgment is by delta.
+- `comparator.json` — Comparator configuration selecting the two theorems and permitting only `propext`, `Quot.sound`, `Classical.choice`.
+- `formalization.yaml` — entry metadata (v0.4 schema).
+
+A predictive mechanical preflight can be run via the reusable workflow in `.github/workflows/palomar-preflight.yml`, pinned to an exact `PalomarRegistry/PalomarSubmission` commit. The preflight is advisory; actual submissions go through [submit.palomar-registry.org](https://submit.palomar-registry.org).

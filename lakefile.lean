@@ -6,13 +6,13 @@ package LeanLearn where
   allowNonModules := true
   leanOptions := #[
     ⟨`warningAsError, true⟩,
-    ⟨`linter.unusedVariables, false⟩,
-    ⟨`linter.unusedSectionVars, false⟩,
-    ⟨`linter.unusedSimpArgs, false⟩,
-    ⟨`linter.unnecessarySimpa, false⟩,
-    ⟨`linter.unusedTactic, false⟩,
-    ⟨`linter.unreachableTactic, false⟩,
-    ⟨`linter.unnecessarySeqFocus, false⟩
+    ⟨`weak.linter.unusedVariables, false⟩,
+    ⟨`weak.linter.unusedSectionVars, false⟩,
+    ⟨`weak.linter.unusedSimpArgs, false⟩,
+    ⟨`weak.linter.unnecessarySimpa, false⟩,
+    ⟨`weak.linter.unusedTactic, false⟩,
+    ⟨`weak.linter.unreachableTactic, false⟩,
+    ⟨`weak.linter.unnecessarySeqFocus, false⟩
   ]
 
 require mathlib from git
@@ -20,3 +20,9 @@ require mathlib from git
 
 @[default_target]
 lean_lib Succinct
+
+@[default_target]
+lean_lib Challenge
+
+@[default_target]
+lean_lib Solution
