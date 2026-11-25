@@ -63,7 +63,12 @@ lemma RSCode.distance_pos_of_le {C : RSCode F} (hle : C.n ≤ C.m) :
       apply_rules [ evalCode_injective_of_le ];
       exact C.distinct;
     have := @h_injective x 0; simp_all +decide ;
-    exact this ( by ext i; simp +decide [ SuccinctProofs.encode ] );
+    exact this (by
+      ext i
+      show (0 : F) = Matrix.mulVec (evalCode C.α).G 0 i
+      rw [show Matrix.mulVec (evalCode C.α).G 0 = (0 : Fin (evalCode C.α).m → F) from
+        Matrix.mulVec_zero _]
+      rfl);
   -- Therefore, the distance of the RS code is at least 1.
   have h_dist_ge_one : ∀ x : Fin C.n → F, x ≠ 0 → 1 ≤ ∥(SuccinctProofs.evalCode C.α) ⇀ₑ x∥₀ := by
     intro x hx_ne_zero

@@ -17,9 +17,8 @@ def evalCode {m n : ℕ} (α : EvalPoints m F) : LinearCode F :=
 /-- Encoding with `evalCode α` equals evaluating the polynomial defined by `x`. -/
 lemma evalCode_encode_eq_eval {m n : ℕ} (α : EvalPoints m F) (x : Vec F n) :
     (evalCode α) ⇀ₑ x
-      = fun i : Fin m => evalPolyOfVec x (α i) := by
-  simpa [evalCode, encode, vandermonde]
-    using (eval_vec_eq_vandermonde_mul (F := F) α x).symm
+      = fun i : Fin m => evalPolyOfVec x (α i) :=
+    (eval_vec_eq_vandermonde_mul (F := F) α x).symm
 
 end EvalCode
 end SuccinctProofs

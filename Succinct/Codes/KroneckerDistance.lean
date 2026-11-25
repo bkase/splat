@@ -4,7 +4,7 @@ import Succinct.Codes.Distance
 import Succinct.Codes.Hamming
 import Succinct.Codes.Aristotle.KroneckerDistanceMain_solution
 import Mathlib.Data.Fintype.Card
-import Mathlib.Tactic.GeneralizeProofs
+import Batteries.Tactic.GeneralizeProofs
 
 /-! ### Kronecker Product Distance (§3.1)
 
@@ -97,7 +97,7 @@ lemma kronecker_support_card {k m n : ℕ} {m' : ℕ} (G : LinearCode F) (G' : L
       convert ha using 2
       congr
       rw [Nat.add_div] <;> norm_num [Nat.div_eq_of_lt, Fin.is_lt]
-      · rw [Nat.mul_div_cancel _ (by linarith [Fin.is_lt b]), if_neg (Nat.not_le_of_gt (Nat.mod_lt _ (by linarith [Fin.is_lt b])))]
+      · rw [Nat.mul_div_cancel _ (by linarith [Fin.is_lt b]), ite_eq_right (Nat.not_le_of_gt (Nat.mod_lt _ (by linarith [Fin.is_lt b])))]
         simp +decide
       · grind
     · contrapose! h

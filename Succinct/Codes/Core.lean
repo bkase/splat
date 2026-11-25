@@ -53,6 +53,7 @@ lemma repeatCode_encode {F : Type*} [Field F] (k n : ℕ) (hn : 0 < n) (x : Vec 
     (repeatCode (F := F) k n) ⇀ₑ x
       = fun i : Fin (k * n) => x ⟨i.val % n, Nat.mod_lt _ hn⟩ := by
   classical
+  unfold repeatCode
   funext i
   let j0 : Fin n := ⟨i.val % n, Nat.mod_lt _ hn⟩
   have hsum :
@@ -77,7 +78,7 @@ lemma repeatCode_encode {F : Type*} [Field F] (k n : ℕ) (hn : 0 < n) (x : Vec 
       sum_single_kronecker (F := F) (n := n) x j0
     -- combine the two rewrites
     exact hdelta.trans hsingle
-  simp [repeatCode, encode, Mat.mulVec_apply, hsum, j0]
+  simp [encode, Mat.mulVec_apply, hsum, j0]
 
 end Codes
 end SuccinctProofs

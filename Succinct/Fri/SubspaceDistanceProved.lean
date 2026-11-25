@@ -78,7 +78,7 @@ lemma nonZeroRows_sub_le_add (A B : Mat F k n) :
     rw [Finset.mem_filter] at hi
     rw [Finset.mem_union, Finset.mem_filter, Finset.mem_filter]
     by_contra h
-    push_neg at h
+    push Not at h
     apply hi.2
     funext j
     have hA : A.row i = 0 := h.1 (Finset.mem_univ i)
@@ -311,7 +311,7 @@ lemma subspace_distance_contradiction
       have h2 : R.card > m - d := hR
       omega
     · -- d > m case: m - R.card ≤ m < d
-      push_neg at hd
+      push Not at hd
       calc m - R.card ≤ m := Nat.sub_le m R.card
         _ < d := hd
   omega

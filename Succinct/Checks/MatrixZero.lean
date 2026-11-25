@@ -46,8 +46,16 @@ lemma matrix_zero_check {d m n k : ℕ} (G : LinearCode F)
   -- Apply the zero_check lemma to each row of X.
   have h_zero_check_rows : ∀ j : Fin k, {ω : Fin G.m | ∑ i : Fin G.n, G.G ω i * X j ⟨i, by linarith [Fin.is_lt i]⟩ = 0} ⟹[ProbabilityTheory.uniformOn Set.univ]_(1 - (d : ENNReal) / G.m) {ω : Fin G.m | X j = 0} := by
     intro j
-    convert zero_check G h_dist hd_pos hle using 1
-    aesop
+    convert zero_check G h_dist hd_pos hle (x := fun i => X j (⟨i.val, by omega⟩ : Fin n)) using 1
+    · rfl
+    · ext ω
+      constructor
+      · intro h
+        funext y
+        exact congrFun h ⟨y.val, by rw [← hGn]; exact y.isLt⟩
+      · intro h
+        funext x
+        exact congrFun h ⟨x.val, by rw [hGn]; exact x.isLt⟩
   unfold Succinct.Prob.ProbImpEv at *
   by_cases h : ∃ ω : Fin G.m, ¬X = 0 ∧ ∀ j : Fin k, ∑ i : Fin G.n, G.G ω i * X j ⟨i, by linarith [Fin.is_lt i]⟩ = 0 <;> simp_all +decide [funext_iff]
   · obtain ⟨⟨j, i, hij⟩, ω, hω⟩ := h
@@ -74,7 +82,8 @@ lemma rowwise_zero_check {d m n k : ℕ} (G : LinearCode F)
   -- Apply zero_check to each row independently
   -- Use the fact that the zero check probability is the same for each row
   convert matrix_zero_check G h_dist hd_pos hle hGm hGn using 1
-  simp +decide [funext_iff]
+  · rfl
+  · simp [funext_iff]
 
 /-- **Helper**: Row zero implies matrix zero (deterministic).
 

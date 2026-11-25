@@ -107,8 +107,8 @@ lemma range_basisMatrix (V : SubspaceVec (F := F) m) :
         = Submodule.span F
             (Set.range fun j : Fin (Module.finrank F V) =>
               (basisMatrix (F := F) V).col j) := by
-    simpa [Mat.range] using
-      Matrix.range_mulVecLin (basisMatrix (F := F) V)
+    simp only [Mat.range]
+    exact Matrix.range_mulVecLin (basisMatrix (F := F) V)
   -- 2) Those columns are exactly the coerced basis vectors of `V`.
   have hcols :
       (fun j : Fin (Module.finrank F V) =>

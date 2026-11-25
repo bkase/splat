@@ -81,7 +81,7 @@ theorem reduced_matrix_zero_check {d m n k t : ℕ} (G : LinearCode F)
   unfold Succinct.Prob.ProbImpEv
   by_cases hX : X = 0
   · -- If X = 0, the consequent is always true, so A ∩ Bᶜ = ∅
-    simp only [hX, Set.setOf_true, Set.compl_univ, Set.inter_empty, measure_empty]
+    simp only [hX, Set.ofPred_true, Set.compl_univ, Set.inter_empty, measure_empty]
     exact bot_le
   · -- If X ≠ 0, we use the independent sampling bound
     have hBc : { ω : Fin t → Fin G.m | X = 0 }ᶜ = Set.univ := by
@@ -95,13 +95,13 @@ theorem reduced_matrix_zero_check {d m n k t : ℕ} (G : LinearCode F)
           ∑ i' : Fin G.n, G.G (ω i) i' * X j ⟨i', by omega⟩ = 0 } =
         { ω | ∀ i, check (ω i) } := by
       ext ω
-      simp only [Set.mem_setOf_eq, check]
+      simp only [Set.mem_ofPred_eq, check]
     rw [h_event_eq]
     -- Apply reduced_matrix_zero_check_bound
     have hm_pos : 0 < G.m := by
       -- From hle : d ≤ G.m and hd_pos : 0 < d
       linarith
-    haveI : NeZero G.m := ⟨Nat.ne_of_gt hm_pos⟩
+    have : NeZero G.m := ⟨Nat.ne_of_gt hm_pos⟩
     apply reduced_matrix_zero_check_bound t G.m d hd_pos hle check
     -- Need to show: P[check r] ≤ (1 - d/m) for uniform r
     -- This follows from matrix_zero_check

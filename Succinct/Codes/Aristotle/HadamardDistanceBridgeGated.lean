@@ -45,7 +45,7 @@ def innerProductGated (x y : Fin n → F) : F := ∑ i, x i * y i
 theorem zero_inner_product_card_gated (x : Fin n → F) (hx : x ≠ 0) (hn : n > 0) :
     Fintype.card {r : Fin n → F | innerProductGated r x = 0} = (Fintype.card F) ^ (n - 1) := by
   have h_subspace : ∃ (W : Submodule F (Fin n → F)), W = {r : Fin n → F | innerProductGated r x = 0} ∧ Module.finrank F W = n - 1 := by
-    refine' ⟨LinearMap.ker (∑ i, x i • LinearMap.proj i), _, _⟩ <;> simp_all +decide [Set.ext_iff, innerProductGated]
+    refine' ⟨LinearMap.ker (∑ i, x i • LinearMap.proj i : (Fin n → F) →ₗ[F] F), _, _⟩ <;> simp_all +decide [Set.ext_iff, innerProductGated]
     · simp +decide [mul_comm]
     · have h_surjective : Function.Surjective (∑ i : Fin n, x i • LinearMap.proj i : (Fin n → F) →ₗ[F] F) := by
         intro y
@@ -60,8 +60,18 @@ theorem zero_inner_product_card_gated (x : Fin n → F) (hx : x ≠ 0) (hn : n >
       simp_all +decide [Module.finrank_self]
       omega
   obtain ⟨W, hW₁, hW₂⟩ := h_subspace
-  have := @Module.card_eq_pow_finrank F W
-  simp_all +decide [Set.ext_iff]
+  classical
+  have hcardW : Fintype.card ↥W = (Fintype.card F) ^ Module.finrank F ↥W :=
+    Module.card_eq_pow_finrank
+  rw [hW₂] at hcardW
+  have hmem : ∀ r : Fin n → F, innerProductGated r x = 0 ↔ r ∈ W := by
+    intro r
+    simpa using ((Set.ext_iff.mp hW₁) r).symm
+  have he : Fintype.card ↥{r : Fin n → F | innerProductGated r x = 0} = Fintype.card ↥W := by
+    refine Fintype.card_congr ?_
+    exact Equiv.subtypeEquivRight hmem
+  rw [he]
+  exact hcardW
 
 /-- The complement: tuples with ⟨r, x⟩ ≠ 0 has cardinality |F|^n - |F|^(n-1). -/
 theorem nonzero_inner_product_card_gated (x : Fin n → F) (hx : x ≠ 0) (hn : n > 0) :

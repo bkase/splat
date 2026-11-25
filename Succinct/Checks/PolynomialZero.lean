@@ -66,7 +66,7 @@ theorem polynomial_zero_via_evaluation {C : RSCode F} (hle : C.n ≤ C.m)
       intro i j hij
       simp only [ne_eq, α']
       have h : (Fin.castLE hle i : Fin C.m) ≠ Fin.castLE hle j := by
-        simp only [ne_eq, Fin.ext_iff, Fin.coe_castLE]
+        simp only [ne_eq, Fin.ext_iff, Fin.val_castLE]
         exact Fin.val_ne_of_ne hij
       exact C.distinct (Fin.castLE hle i) (Fin.castLE hle j) h
     -- Use polynomial_zero_via_evaluations from Aristotle (Batch 11, ab486136)
@@ -137,7 +137,7 @@ private lemma uniformOn_eval_zero_bound {C : RSCode F} (p : Polynomial F) (hp : 
         (Finset.filter (fun ω : Fin C.m => p.eval (C.α ω) = 0) Finset.univ).card := by
       rw [Set.encard_eq_coe_toFinset_card]
       congr 1
-      simp only [Set.toFinset_setOf]
+      simp only [Set.toFinset_ofPred]
     rw [h_encard]
     norm_cast
     calc (Finset.filter (fun ω : Fin C.m => p.eval (C.α ω) = 0) Finset.univ).card
@@ -171,7 +171,7 @@ theorem polynomial_zero_check {C : RSCode F}
   unfold Succinct.Prob.ProbImpEv
   by_cases hp : p = 0
   · -- If p = 0, the consequent is always true, so A ∩ Bᶜ = ∅
-    simp only [hp, Set.setOf_true, Set.compl_univ, Set.inter_empty, measure_empty]
+    simp only [hp, Set.ofPred_true, Set.compl_univ, Set.inter_empty, measure_empty]
     exact bot_le
   · -- If p ≠ 0, we use the roots bound
     have hBc : { ω : Fin C.m | p = 0 }ᶜ = Set.univ := by

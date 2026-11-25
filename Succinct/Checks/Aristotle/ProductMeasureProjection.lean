@@ -37,7 +37,7 @@ a factor of n/n = 1.
 import Mathlib.Tactic
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Notation
-import Mathlib.Data.ENNReal.Basic
+import Mathlib.Basic.ENNReal.Basic
 
 
 noncomputable section

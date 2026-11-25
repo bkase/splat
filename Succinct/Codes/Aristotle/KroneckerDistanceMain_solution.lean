@@ -37,211 +37,6 @@ the distance properties of the component codes.
 import Mathlib.Tactic
 
 
-import Mathlib.Tactic.GeneralizeProofs
-
-namespace Harmonic.GeneralizeProofs
--- Harmonic `generalize_proofs` tactic
-
-open Lean Meta Elab Parser.Tactic Elab.Tactic Mathlib.Tactic.GeneralizeProofs
-def mkLambdaFVarsUsedOnly' (fvars : Array Expr) (e : Expr) : MetaM (Array Expr × Expr) := do
-  let mut e := e
-  let mut fvars' : List Expr := []
-  for i' in [0:fvars.size] do
-    let fvar := fvars[fvars.size - i' - 1]!
-    e ← mkLambdaFVars #[fvar] e (usedOnly := false) (usedLetOnly := false)
-    match e with
-    | .letE _ _ v b _ => e := b.instantiate1 v
-    | .lam _ _ _b _ => fvars' := fvar :: fvars'
-    | _ => unreachable!
-  return (fvars'.toArray, e)
-
-partial def abstractProofs' (e : Expr) (ty? : Option Expr) : MAbs Expr := do
-  if (← read).depth ≤ (← read).config.maxDepth then MAbs.withRecurse <| visit (← instantiateMVars e) ty?
-  else return e
-where
-  visit (e : Expr) (ty? : Option Expr) : MAbs Expr := do
-    if (← read).config.debug then
-      if let some ty := ty? then
-        unless ← isDefEq (← inferType e) ty do
-          throwError "visit: type of{indentD e}\nis not{indentD ty}"
-    if e.isAtomic then
-      return e
-    else
-      checkCache (e, ty?) fun _ ↦ do
-        if ← isProof e then
-          visitProof e ty?
-        else
-          match e with
-          | .forallE n t b i =>
-            withLocalDecl n i (← visit t none) fun x ↦ MAbs.withLocal x do
-              mkForallFVars #[x] (← visit (b.instantiate1 x) none) (usedOnly := false) (usedLetOnly := false)
-          | .lam n t b i => do
-            withLocalDecl n i (← visit t none) fun x ↦ MAbs.withLocal x do
-              let ty'? ←
-                if let some ty := ty? then
-                  let .forallE _ _ tyB _ ← pure ty
-                    | throwError "Expecting forall in abstractProofs .lam"
-                  pure <| some <| tyB.instantiate1 x
-                else
-                  pure none
-              mkLambdaFVars #[x] (← visit (b.instantiate1 x) ty'?) (usedOnly := false) (usedLetOnly := false)
-          | .letE n t v b _ =>
-            let t' ← visit t none
-            withLetDecl n t' (← visit v t') fun x ↦ MAbs.withLocal x do
-              mkLetFVars #[x] (← visit (b.instantiate1 x) ty?) (usedLetOnly := false)
-          | .app .. =>
-            e.withApp fun f args ↦ do
-              let f' ← visit f none
-              let argTys ← appArgExpectedTypes f' args ty?
-              let mut args' := #[]
-              for arg in args, argTy in argTys do
-                args' := args'.push <| ← visit arg argTy
-              return mkAppN f' args'
-          | .mdata _ b  => return e.updateMData! (← visit b ty?)
-          | .proj _ _ b => return e.updateProj! (← visit b none)
-          | _           => unreachable!
-  visitProof (e : Expr) (ty? : Option Expr) : MAbs Expr := do
-    let eOrig := e
-    let fvars := (← read).fvars
-    let e := e.withApp' fun f args => f.beta args
-    if e.withApp' fun f args => f.isAtomic && args.all fvars.contains then return e
-    let e ←
-      if let some ty := ty? then
-        if (← read).config.debug then
-          unless ← isDefEq ty (← inferType e) do
-            throwError m!"visitProof: incorrectly propagated type{indentD ty}\nfor{indentD e}"
-        mkExpectedTypeHint e ty
-      else pure e
-    if (← read).config.debug then
-      unless ← Lean.MetavarContext.isWellFormed (← getLCtx) e do
-        throwError m!"visitProof: proof{indentD e}\nis not well-formed in the current context\n\
-          fvars: {fvars}"
-    let (fvars', pf) ← mkLambdaFVarsUsedOnly' fvars e
-    if !(← read).config.abstract && !fvars'.isEmpty then
-      return eOrig
-    if (← read).config.debug then
-      unless ← Lean.MetavarContext.isWellFormed (← read).initLCtx pf do
-        throwError m!"visitProof: proof{indentD pf}\nis not well-formed in the initial context\n\
-          fvars: {fvars}\n{(← mkFreshExprMVar none).mvarId!}"
-    let pfTy ← instantiateMVars (← inferType pf)
-    let pfTy ← abstractProofs' pfTy none
-    if let some pf' ← MAbs.findProof? pfTy then
-      return mkAppN pf' fvars'
-    MAbs.insertProof pfTy pf
-    return mkAppN pf fvars'
-partial def withGeneralizedProofs' {α : Type} [Inhabited α] (e : Expr) (ty? : Option Expr)
-    (k : Array Expr → Array Expr → Expr → MGen α) :
-    MGen α := do
-  let propToFVar := (← get).propToFVar
-  let (e, generalizations) ← MGen.runMAbs <| abstractProofs' e ty?
-  let rec
-    go [Inhabited α] (i : Nat) (fvars pfs : Array Expr)
-        (proofToFVar propToFVar : ExprMap Expr) : MGen α := do
-      if h : i < generalizations.size then
-        let (ty, pf) := generalizations[i]
-        let ty := (← instantiateMVars (ty.replace proofToFVar.get?)).cleanupAnnotations
-        withLocalDeclD (← mkFreshUserName `pf) ty fun fvar => do
-          go (i + 1) (fvars := fvars.push fvar) (pfs := pfs.push pf)
-            (proofToFVar := proofToFVar.insert pf fvar)
-            (propToFVar := propToFVar.insert ty fvar)
-      else
-        withNewLocalInstances fvars 0 do
-          let e' := e.replace proofToFVar.get?
-          modify fun s => { s with propToFVar }
-          k fvars pfs e'
-  go 0 #[] #[] (proofToFVar := {}) (propToFVar := propToFVar)
-
-partial def generalizeProofsCore'
-    (g : MVarId) (fvars rfvars : Array FVarId) (target : Bool) :
-    MGen (Array Expr × MVarId) := go g 0 #[]
-where
-  go (g : MVarId) (i : Nat) (hs : Array Expr) : MGen (Array Expr × MVarId) := g.withContext do
-    let tag ← g.getTag
-    if h : i < rfvars.size then
-      let fvar := rfvars[i]
-      if fvars.contains fvar then
-        let tgt ← instantiateMVars <| ← g.getType
-        let ty := (if tgt.isLet then tgt.letType! else tgt.bindingDomain!).cleanupAnnotations
-        if ← pure tgt.isLet <&&> Meta.isProp ty then
-          let tgt' := Expr.forallE tgt.letName! ty tgt.letBody! .default
-          let g' ← mkFreshExprSyntheticOpaqueMVar tgt' tag
-          g.assign <| .app g' tgt.letValue!
-          return ← go g'.mvarId! i hs
-        if let some pf := (← get).propToFVar.get? ty then
-          let tgt' := tgt.bindingBody!.instantiate1 pf
-          let g' ← mkFreshExprSyntheticOpaqueMVar tgt' tag
-          g.assign <| .lam tgt.bindingName! tgt.bindingDomain! g' tgt.bindingInfo!
-          return ← go g'.mvarId! (i + 1) hs
-        match tgt with
-        | .forallE n t b bi =>
-          let prop ← Meta.isProp t
-          withGeneralizedProofs' t none fun hs' pfs' t' => do
-            let t' := t'.cleanupAnnotations
-            let tgt' := Expr.forallE n t' b bi
-            let g' ← mkFreshExprSyntheticOpaqueMVar tgt' tag
-            g.assign <| mkAppN (← mkLambdaFVars hs' g' (usedOnly := false) (usedLetOnly := false)) pfs'
-            let (fvar', g') ← g'.mvarId!.intro1P
-            g'.withContext do Elab.pushInfoLeaf <|
-              .ofFVarAliasInfo { id := fvar', baseId := fvar, userName := ← fvar'.getUserName }
-            if prop then
-              MGen.insertFVar t' (.fvar fvar')
-            go g' (i + 1) (hs ++ hs')
-        | .letE n t v b _ =>
-          withGeneralizedProofs' t none fun hs' pfs' t' => do
-            withGeneralizedProofs' v t' fun hs'' pfs'' v' => do
-              let tgt' := Expr.letE n t' v' b false
-              let g' ← mkFreshExprSyntheticOpaqueMVar tgt' tag
-              g.assign <| mkAppN (← mkLambdaFVars (hs' ++ hs'') g' (usedOnly := false) (usedLetOnly := false)) (pfs' ++ pfs'')
-              let (fvar', g') ← g'.mvarId!.intro1P
-              g'.withContext do Elab.pushInfoLeaf <|
-                .ofFVarAliasInfo { id := fvar', baseId := fvar, userName := ← fvar'.getUserName }
-              go g' (i + 1) (hs ++ hs' ++ hs'')
-        | _ => unreachable!
-      else
-        let (fvar', g') ← g.intro1P
-        g'.withContext do Elab.pushInfoLeaf <|
-          .ofFVarAliasInfo { id := fvar', baseId := fvar, userName := ← fvar'.getUserName }
-        go g' (i + 1) hs
-    else if target then
-      withGeneralizedProofs' (← g.getType) none fun hs' pfs' ty' => do
-        let g' ← mkFreshExprSyntheticOpaqueMVar ty' tag
-        g.assign <| mkAppN (← mkLambdaFVars hs' g' (usedOnly := false) (usedLetOnly := false)) pfs'
-        return (hs ++ hs', g'.mvarId!)
-    else
-      return (hs, g)
-
-end GeneralizeProofs
-
-open Lean Elab Parser.Tactic Elab.Tactic Mathlib.Tactic.GeneralizeProofs
-partial def generalizeProofs'
-    (g : MVarId) (fvars : Array FVarId) (target : Bool) (config : Config := {}) :
-    MetaM (Array Expr × MVarId) := do
-  let (rfvars, g) ← g.revert fvars (clearAuxDeclsInsteadOfRevert := true)
-  g.withContext do
-    let s := { propToFVar := ← initialPropToFVar }
-    GeneralizeProofs.generalizeProofsCore' g fvars rfvars target |>.run config |>.run' s
-
-elab (name := generalizeProofsElab'') "generalize_proofs" config?:(Parser.Tactic.config)?
-    hs:(ppSpace colGt binderIdent)* loc?:(location)? : tactic => withMainContext do
-  let config ← elabConfig (mkOptionalNode config?)
-  let (fvars, target) ←
-    match expandOptLocation (Lean.mkOptionalNode loc?) with
-    | .wildcard => pure ((← getLCtx).getFVarIds, true)
-    | .targets t target => pure (← getFVarIds t, target)
-  liftMetaTactic1 fun g => do
-    let (pfs, g) ← generalizeProofs' g fvars target config
-    g.withContext do
-      let mut lctx ← getLCtx
-      for h in hs, fvar in pfs do
-        if let `(binderIdent| $s:ident) := h then
-          lctx := lctx.setUserName fvar.fvarId! s.getId
-        Expr.addLocalVarInfoForBinderIdent fvar h
-      Meta.withLCtx lctx (← Meta.getLocalInstances) do
-        let g' ← Meta.mkFreshExprSyntheticOpaqueMVar (← g.getType) (← g.getTag)
-        g.assign g'
-        return g'.mvarId!
-
-end Harmonic
 
 noncomputable section
 
@@ -381,24 +176,31 @@ lemma kronecker_encode_eq {m n m' n' : ℕ} (G : Mat F m n) (G' : Mat F m' n')
     (x : Vec F (n' * n)) :
     vecToMat (m := m') (n := m) (Matrix.mulVec (kroneckerCode (LinearCode.mk m' n' G') (LinearCode.mk m n G)).G x)
     = matMul (matMul G' (vecToMat (m := n') (n := n) x)) (matTranspose G) := by
-  ext ⟨ i, hi ⟩ ⟨ j, hj ⟩ ; simp +decide [ KroneckerGated.kroneckerCode, Matrix.mulVec ] ; ring;
+  ext ⟨ i, hi ⟩ ⟨ j, hj ⟩ ; simp +decide [ KroneckerGated.kroneckerCode, Matrix.mulVec ]
   unfold KroneckerGated.vecToMat KroneckerGated.matMul KroneckerGated.matTranspose Matrix.mulVec
   generalize_proofs at *;
   simp +decide [ dotProduct, Finset.sum_mul _ _ _ ];
-  rw [ ← Finset.sum_product' ];
-  refine' Finset.sum_bij ( fun q _ => ( ⟨ q.val % n, by
-    exact Nat.mod_lt _ ( Nat.pos_of_ne_zero ( by aesop_cat ) ) ⟩, ⟨ q.val / n, by
-    exact Nat.div_lt_of_lt_mul <| by linarith [ Fin.is_lt q ] ; ⟩ ) ) _ _ _ _ <;> simp +decide [ Nat.div_add_mod' ]
-  all_goals generalize_proofs at *;
-  · exact fun a₁ a₂ h₁ h₂ => Fin.ext <| by nlinarith [ Nat.mod_add_div a₁ n, Nat.mod_add_div a₂ n ] ;
-  · intro a b; use ⟨ b.val * n + a.val, by
-      nlinarith [ Fin.is_lt a, Fin.is_lt b ] ⟩ ; simp +decide [ Nat.mod_eq_of_lt, Nat.div_eq_of_lt, * ]
-    generalize_proofs at *;
-    exact Fin.ext ( Nat.le_antisymm ( Nat.le_of_lt_succ <| by nlinarith [ Nat.div_mul_le_self ( b * n + a ) n, Fin.is_lt a, Fin.is_lt b ] ) ( Nat.le_of_lt_succ <| by nlinarith [ Nat.div_add_mod ( b * n + a ) n, Nat.mod_lt ( b * n + a ) ( Fin.pos a ), Fin.is_lt a, Fin.is_lt b ] ) );
-  · simp +decide [ Nat.add_div, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hi, mul_assoc, mul_comm, mul_left_comm ];
-    simp +decide [ add_comm, Nat.add_mul_div_left _ _ ( Nat.pos_of_ne_zero ( by aesop_cat : m ≠ 0 ) ), mul_comm ];
-    simp +decide [ Nat.div_eq_of_lt hj, mul_comm ];
-    exact fun a => Or.inl ( mul_comm _ _ )
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · refine Finset.sum_eq_zero fun q _ => absurd q.isLt (by omega)
+  · rw [ ← Finset.sum_product' ];
+    refine' Finset.sum_bij ( fun q _ => ( ⟨ q.val % n, Nat.mod_lt _ hn ⟩, ⟨ q.val / n,
+      Nat.div_lt_of_lt_mul <| by linarith [ Fin.is_lt q ] ⟩ ) ) _ _ _ _ <;> simp +decide [ Nat.div_add_mod' ]
+    all_goals generalize_proofs at *;
+    · intro a₁ _ a₂ _ hmod hdiv
+      exact Fin.ext <| by nlinarith [ Nat.mod_add_div a₁ n, Nat.mod_add_div a₂ n ]
+    · intro a b; use ⟨ b.val * n + a.val, by
+        nlinarith [ Fin.is_lt a, Fin.is_lt b ] ⟩ ; simp +decide [ Nat.mod_eq_of_lt, Nat.div_eq_of_lt, * ]
+      generalize_proofs at *;
+      have hval : (↑b * n + ↑a) / n = ↑b := by
+        rw [Nat.mul_comm ↑b n, Nat.mul_add_div hn, Nat.div_eq_of_lt (Fin.is_lt a)]
+        simp
+      exact ⟨Finset.mem_univ _, Fin.ext hval⟩
+    · simp +decide [ Nat.add_div, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hi, mul_assoc, mul_comm, mul_left_comm ];
+      simp +decide [ add_comm, Nat.add_mul_div_left _ _ ( Nat.pos_of_ne_zero ( by omega : m ≠ 0 ) ), mul_comm ];
+      simp +decide [ Nat.div_eq_of_lt hj, mul_comm ];
+      intro a _
+      left
+      ring
 
 /-
 If a matrix X is non-zero, then X * G^T has at least d non-zero columns, where d is the distance of G.
@@ -424,7 +226,7 @@ lemma cols_nonzero_ge_dist {k : ℕ} (G : LinearCode F) (d : ℕ)
   refine' le_trans h_weight ( Fintype.card_le_of_injective _ _ );
   refine' fun x => ⟨ x.val, _ ⟩;
   all_goals simp +decide [ Function.Injective ];
-  exact ⟨ i, by simpa [ Matrix.mulVec, dotProduct, mul_comm ] using x.2 ⟩
+  exact ⟨ i, by simpa [ Matrix.mulVec, dotProduct, mul_comm, KroneckerGated.matMul, KroneckerGated.matTranspose ] using x.2 ⟩
 
 /-
 The weight of the matrix product G'Z is at least d' times the number of non-zero columns of Z, given that G' has distance at least d'.
@@ -447,7 +249,7 @@ lemma weight_ge_dist_mul_cols {m n : ℕ} (G' : LinearCode F) (d' : ℕ)
     -- Matrix weight = sum of column weights (counting by fibers)
     -- The total number of nonzero entries in G'.G * Z equals the sum over columns j
     -- of the number of nonzero entries in column j.
-    simp only [weightMat, Fintype.card_subtype, weightVec, matMul]
+    simp only [weightMat, weightVec, matMul]
     -- This is a standard counting argument: count pairs (i,j) by fiber over j
     have : Fintype.card { p : Fin G'.m × Fin n | ∑ j, G'.G p.1 j * Z j p.2 ≠ 0 } =
            ∑ j : Fin n, Fintype.card { i : Fin G'.m | ∑ k, G'.G i k * Z k j ≠ 0 } := by
@@ -455,7 +257,7 @@ lemma weight_ge_dist_mul_cols {m n : ℕ} (G' : LinearCode F) (d' : ℕ)
       refine Fintype.card_congr ⟨fun ⟨⟨i, j⟩, h⟩ => ⟨j, ⟨i, h⟩⟩, fun ⟨j, ⟨i, h⟩⟩ => ⟨⟨i, j⟩, h⟩, ?_, ?_⟩
       · intro ⟨⟨i, j⟩, h⟩; rfl
       · intro ⟨j, ⟨i, h⟩⟩; rfl
-    convert this using 2 <;> simp only [Set.coe_setOf, Set.mem_setOf_eq, Fintype.card_subtype]
+    exact this
   have h_sum_weight_ge : ∑ j : Fin n, weightVec (fun i => ∑ k, G'.G i k * Z k j) ≥ ∑ j : Fin n, if (∃ i : Fin G'.n, Z i j ≠ 0) then d' else 0 := by
     exact Finset.sum_le_sum fun j _ => by split_ifs <;> [ exact h_col_weight j ‹_›; exact Nat.zero_le _ ] ;
   convert h_sum_weight_ge using 1 ; simp +decide [ KroneckerGated.nonZeroCols, mul_comm ] ; ring;
@@ -477,35 +279,74 @@ theorem kronecker_product_distance {k m n m' : ℕ}
     -- Let $X = \text{vecToMat } x$. Since $x \neq 0$, $X \neq 0$.
     set X : Mat F G'.n G.n := vecToMat (m := G'.n) (n := G.n) x
     have hX_nonzero : X ≠ 0 := by
-      contrapose! hx;
-      ext i; exact (by
-      convert congr_fun ( congr_fun hx ⟨ i.val / G.n, by
-        exact Nat.div_lt_of_lt_mul <| by linarith [ Fin.is_lt i, show ( KroneckerGated.kroneckerCode G' G ).n = G'.n * G.n from rfl ] ; ⟩ ) ⟨ i.val % G.n, by
-        by_cases h : G.n = 0 <;> simp_all +decide [ Nat.mod_lt ];
-        · exact absurd i.2 ( by simp +decide [ hGn.symm, h, KroneckerGated.kroneckerCode ] );
-        · exact Nat.mod_lt _ ( Nat.pos_of_ne_zero h ) ⟩ using 1
-      generalize_proofs at *;
-      exact congr_arg _ ( by simp +decide [ Nat.div_add_mod' ] ))
+      intro hX0
+      apply hx
+      funext q
+      rcases Nat.eq_zero_or_pos G.n with h0 | hn
+      · rw [show (KroneckerGated.kroneckerCode G' G).n = G'.n * G.n from rfl] at q
+        rw [h0] at q
+        exact absurd q.isLt (by omega)
+      · have hi : (q : ℕ) / G.n < G'.n :=
+          Nat.div_lt_of_lt_mul <|
+            by linarith [Fin.is_lt q,
+              show (KroneckerGated.kroneckerCode G' G).n = G'.n * G.n from rfl]
+        have hj : (q : ℕ) % G.n < G.n := Nat.mod_lt _ hn
+        have hval : X ⟨(q : ℕ) / G.n, hi⟩ ⟨(q : ℕ) % G.n, hj⟩ = x q := by
+          have hdm : G.n * ((q : ℕ) / G.n) + (q : ℕ) % G.n = (q : ℕ) :=
+            Nat.div_add_mod _ _
+          have hcomm : (q : ℕ) / G.n * G.n = G.n * ((q : ℕ) / G.n) :=
+            Nat.mul_comm _ _
+          have heq : (q : ℕ) / G.n * G.n + (q : ℕ) % G.n = (q : ℕ) := by
+            rw [hcomm]
+            exact hdm
+          have hlt : (q : ℕ) / G.n * G.n + (q : ℕ) % G.n
+              < (KroneckerGated.kroneckerCode G' G).n := by
+            rw [heq]
+            exact q.isLt
+          have h1 : X ⟨(q : ℕ) / G.n, hi⟩ ⟨(q : ℕ) % G.n, hj⟩
+              = x ⟨(q : ℕ) / G.n * G.n + (q : ℕ) % G.n, hlt⟩ := rfl
+          have h2 : (⟨(q : ℕ) / G.n * G.n + (q : ℕ) % G.n, hlt⟩ :
+              Fin (KroneckerGated.kroneckerCode G' G).n) = q :=
+            Fin.ext heq
+          rw [h1, h2]
+        show x q = 0
+        rw [← hval, hX0]
+        simp
     have hX_weight : weightVec (encode (kroneckerCode G' G) x) = weightMat (matMul G'.G (matMul X (matTranspose G.G))) := by
-      convert weight_eq_weight_mat _ using 2
-      generalize_proofs at *; (
-      convert ( kronecker_encode_eq G.G G'.G x ) |> Eq.symm using 1
-      generalize_proofs at *; (
-      ext i k; simp +decide [ KroneckerGated.matMul ] ; ring;
-      simp +decide only [Finset.mul_sum _ _ _, Finset.sum_mul, mul_assoc] ; exact Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring ) ;))
+      have h1 := weight_eq_weight_mat (m := G'.m) (n := G.m) (encode (kroneckerCode G' G) x)
+      have henc : vecToMat (m := G'.m) (n := G.m) (encode (kroneckerCode G' G) x)
+          = matMul (matMul G'.G X) (matTranspose G.G) :=
+        kronecker_encode_eq G.G G'.G x
+      rw [henc] at h1
+      have hassoc : matMul (matMul G'.G X) (matTranspose G.G)
+          = matMul G'.G (matMul X (matTranspose G.G)) := by
+        ext i j
+        simp only [KroneckerGated.matMul, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+        exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => by ring)
+      rw [hassoc] at h1
+      exact h1
     have hX_weight_ge : weightMat (matMul G'.G (matMul X (matTranspose G.G))) ≥ d' * nonZeroCols (matMul X (matTranspose G.G)) := by
       apply weight_ge_dist_mul_cols G' d' (by
       simp +decide [ KroneckerGated.distance ] at * ; aesop;) (matMul X (matTranspose G.G));
       exact 0
     have hX_nonzero_cols : nonZeroCols (matMul X (matTranspose G.G)) ≥ d := by
       apply cols_nonzero_ge_dist G d (by
-      refine' le_csInf _ _ <;> norm_num
-      generalize_proofs at *; (
-      by_cases h : ∃ x : KroneckerGated.Vec F G.n, x ≠ 0 <;> simp_all +decide [ Set.Nonempty ];
-      · exact ⟨ _, h.choose, h.choose_spec, rfl ⟩;
-      · exact hX_nonzero ( funext fun i => funext fun j => h _ |> fun h => by simpa using congr_fun h _ ));
-      exact fun b x hx hb => hb.symm ▸ WithTop.coe_le_coe.mpr ( h_dist _ _ hx rfl )) X hX_nonzero
-      skip
+        have hS : {w : WithTop ℕ | ∃ x : KroneckerGated.Vec F G.n, x ≠ 0 ∧
+            w = ↑∥G ⇀ₑ x∥₀}.Nonempty := by
+          by_cases h : ∃ x : KroneckerGated.Vec F G.n, x ≠ 0
+          · exact ⟨_, h.choose, h.choose_spec, rfl⟩
+          · exfalso
+            apply hX_nonzero
+            funext i j
+            have hrow : ∀ i : Fin G'.n,
+                (fun j => X i j : KroneckerGated.Vec F G.n) = 0 := by
+              intro i
+              by_contra hne
+              exact h ⟨_, hne⟩
+            simpa using congrFun (hrow i) j
+        refine le_csInf hS ?_
+        rintro w ⟨x, hx, rfl⟩
+        exact WithTop.coe_le_coe.mpr (h_dist _ x hx rfl)) X hX_nonzero
     have hX_weight_final : weightVec (encode (kroneckerCode G' G) x) ≥ d' * d := by
       exact hX_weight.symm ▸ hX_weight_ge.trans' ( Nat.mul_le_mul_left _ hX_nonzero_cols )
     exact hX_weight_final

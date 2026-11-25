@@ -210,13 +210,34 @@ lemma coeffsFold_eval
   · rw [Finset.sum_union]
     · simp +decide [Finset.sum_add_distrib, add_mul, mul_assoc, Finset.sum_image]
       rw [Finset.sum_image, Finset.sum_image] <;> simp +decide [Fin.ext_iff]
-      rw [Finset.sum_congr rfl fun x hx => if_pos <| by linarith [Fin.is_lt x, Nat.div_mul_le_self n 2]]
+      rw [Finset.sum_congr rfl fun x hx => ite_eq_left <| by linarith [Fin.is_lt x, Nat.div_mul_le_self n 2]]
       simp +decide [add_assoc, Finset.sum_add_distrib]
-      all_goals grind
+      have hnp : ∀ t : Fin ((n + 1) / 2 - n / 2),
+          ¬(2 * (n / 2 + (t : ℕ)) + 1 < n) := by
+        intro t; have ht := t.isLt; omega
+      have hinjOn1 : Set.InjOn
+          (fun x : Fin (n / 2) => (⟨x.val, by omega⟩ : Fin ((n + 1) / 2)))
+          (↑(Finset.univ : Finset (Fin (n / 2)))) :=
+        fun a _ b _ h => Fin.ext (by simpa using h)
+      have hinjOn2 : Set.InjOn
+          (fun x : Fin ((n + 1) / 2 - n / 2) => (⟨n / 2 + x.val, by omega⟩ : Fin ((n + 1) / 2)))
+          (↑(Finset.univ : Finset (Fin ((n + 1) / 2 - n / 2)))) :=
+        fun a _ b _ h => Fin.ext (by simpa using h)
+      · simp only [hnp]
+        rw [Finset.sum_image hinjOn1, Finset.sum_image hinjOn2]
+        abel
+      · exact fun x y h => Fin.ext (by simpa using h)
+      · exact fun x y h => Fin.ext (by simpa using h)
     · norm_num [Finset.disjoint_left]
-      grind
+      intro a x h
+      have ha := a.isLt
+      have hx := x.isLt
+      omega
   · norm_num [Finset.disjoint_left]
-    grind
+    intro a x h
+    have ha := a.isLt
+    have hx := x.isLt
+    omega
   · ext ⟨x, hx⟩
     simp +decide [Finset.mem_union, Finset.mem_image]
     exact if h : x < n / 2 then Or.inl ⟨⟨x, h⟩, rfl⟩ else Or.inr ⟨⟨x - n / 2, by omega⟩, by rw [add_tsub_cancel_of_le (by omega)]⟩

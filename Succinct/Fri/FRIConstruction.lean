@@ -257,14 +257,18 @@ theorem fri_folding_preserves_proximity
   obtain ⟨ w, hw_mem, hw_dist ⟩ := h_close
   refine' ⟨ _, ⟨ w, hw_mem, rfl ⟩, hw_dist.trans' _ ⟩
   unfold SuccinctProofs.weightVec
-  simp +decide [ Fintype.card_subtype, SuccinctProofs.friFold ]
-  refine' le_trans ( Finset.card_le_card _ ) _
-  exact Finset.image ( fun x : Fin k => ⟨ x / 2, Nat.div_lt_of_lt_mul <| by omega ⟩ ) ( Finset.filter ( fun x : Fin k => ¬v x - w x = 0 ) Finset.univ )
-  · intro x hx; simp_all +decide [ Finset.mem_image, Finset.mem_filter ]
+  have h1 : (↑{i : Fin (k / 2) |
+        (friFold v α eval_points hk - friFold w α eval_points hk) i ≠ 0} : Set (Fin (k / 2))).toFinset
+      ⊆ Finset.image (fun x : Fin k => (⟨(x : ℕ) / 2, by have := x.isLt; omega⟩ : Fin (k / 2)))
+          ((↑{i : Fin k | (v - w) i ≠ 0} : Set (Fin k)).toFinset) := by
+    intro x hx
+    simp only [Set.mem_toFinset, Set.mem_ofPred_eq, Finset.mem_image] at hx ⊢
     contrapose! hx
-    have := hx ⟨ 2 * x, by omega ⟩ ; have := hx ⟨ 2 * x + 1, by omega ⟩ ; simp_all +decide [ Nat.add_div ]
-    simp_all +decide [ sub_eq_iff_eq_add ]
-  · exact Finset.card_image_le
+    have h2x := hx ⟨2 * (x : ℕ), by omega⟩
+    have h2x1 := hx ⟨2 * (x : ℕ) + 1, by omega⟩
+    simp_all +decide [Nat.add_div, SuccinctProofs.friFold, sub_eq_iff_eq_add]
+  rw [← Set.toFinset_card, ← Set.toFinset_card]
+  exact (Finset.card_le_card h1).trans Finset.card_image_le
 
 end FRIFoldingProximity
 
@@ -362,7 +366,7 @@ lemma weight_positive_of_nonzero
   -- v ≠ 0 means there exists some index where v is nonzero
   have h_exists : ∃ i : Fin k, v i ≠ 0 := by
     by_contra h
-    push_neg at h
+    push Not at h
     -- If v i = 0 for all i, then v = 0
     have v_zero : v = 0 := by
       funext i
@@ -410,12 +414,10 @@ lemma distVecToSubspace_eq_zero_iff
     · exact ⟨ _, ⟨ 0, V.zero_mem, rfl ⟩ ⟩;
     · rintro _ ⟨ v, hv, rfl ⟩;
       refine' mod_cast Nat.pos_of_ne_zero _;
-      simp +decide [ SuccinctProofs.weightVec ];
-      rw [ Fintype.card_subtype ];
-      refine' Nat.sub_ne_zero_of_lt _;
-      refine' lt_of_lt_of_le ( Finset.card_lt_card ( Finset.filter_ssubset.mpr _ ) ) _;
-      · exact not_forall_not.mp fun h' => h <| by convert hv using 1; ext i; simp_all +decide [ sub_eq_zero ] ;
-      · simp +decide;
+      by_contra hcon
+      have hz : x - v = 0 := (SuccinctProofs.weightVec_eq_zero_iff (x - v)).mp hcon
+      have hxeq : x = v := sub_eq_zero.mp hz
+      exact h (by rw [hxeq]; exact hv)
   · exact le_antisymm ( csInf_le ⟨ 0, fun w hw => by rcases hw with ⟨ v, hv, rfl ⟩ ; exact Nat.cast_nonneg _ ⟩ ⟨ x, h, by simp +decide [ weightVec ] ⟩ ) ( le_csInf ⟨ _, ⟨ x, h, rfl ⟩ ⟩ fun w hw => by rcases hw with ⟨ v, hv, rfl ⟩ ; exact Nat.cast_nonneg _ )
 
 end FRIFoundationLemmas
@@ -504,10 +506,10 @@ lemma folding_membership_characterization
   constructor
   · -- Forward: if fold(v) ∈ V_next, then ∃ w ∈ V, fold(v) = fold(w)
     intro h_mem
-    simpa using h_mem
+    exact h_mem
   · -- Backward: if ∃ w ∈ V, fold(v) = fold(w), then fold(v) ∈ V_next
     rintro ⟨w, hw, heq⟩
-    simpa [heq] using ⟨w, hw, rfl⟩
+    exact ⟨w, hw, heq⟩
 
 end FRIFoldingLemmas
 
@@ -578,14 +580,18 @@ lemma multi_round_inductive_step
   refine' ⟨ _, ⟨ w, hw₁, rfl ⟩, _ ⟩;
   refine' le_trans _ ( Nat.add_le_add_right hw₂ 1 );
   unfold SuccinctProofs.weightVec;
-  simp +decide [ Fintype.card_subtype, SuccinctProofs.friFold ];
-  refine' le_trans ( Finset.card_le_card _ ) _;
-  exact Finset.image ( fun x : Fin k => ⟨ x / 2, Nat.div_lt_of_lt_mul <| by omega ⟩ ) ( Finset.filter ( fun x : Fin k => ¬v x - w x = 0 ) Finset.univ );
-  · intro x hx; simp_all +decide [ Finset.subset_iff ] ;
-    contrapose! hx;
-    have := hx ⟨ 2 * x, by omega ⟩ ; have := hx ⟨ 2 * x + 1, by omega ⟩ ; simp_all +decide [ Nat.add_div ] ;
-    simp_all +decide [ sub_eq_iff_eq_add ];
-  · exact le_trans ( Finset.card_image_le ) ( Nat.le_succ _ )
+  have h1 : (↑{i : Fin (k / 2) |
+        (friFold v α eval_points hk - friFold w α eval_points hk) i ≠ 0} : Set (Fin (k / 2))).toFinset
+      ⊆ Finset.image (fun x : Fin k => (⟨(x : ℕ) / 2, by have := x.isLt; omega⟩ : Fin (k / 2)))
+          ((↑{i : Fin k | (v - w) i ≠ 0} : Set (Fin k)).toFinset) := by
+    intro x hx
+    simp only [Set.mem_toFinset, Set.mem_ofPred_eq, Finset.mem_image] at hx ⊢
+    contrapose! hx
+    have h2x := hx ⟨2 * (x : ℕ), by have := x.isLt; omega⟩
+    have h2x1 := hx ⟨2 * (x : ℕ) + 1, by have := x.isLt; omega⟩
+    simp_all +decide [Nat.add_div, SuccinctProofs.friFold, sub_eq_iff_eq_add]
+  rw [← Set.toFinset_card, ← Set.toFinset_card]
+  exact ((Finset.card_le_card h1).trans Finset.card_image_le).trans (Nat.le_succ _)
 
 end FRIMultiRoundInductiveStep
 
@@ -1249,7 +1255,8 @@ theorem fri_multi_round_soundness
       ext ρ
       simp [All, Bad]
     have h_bad_card : Fintype.card { α : F // α ∈ Bad } ≤ k / 2 := by
-      simpa [Bad] using bad_alpha_set_finite_of_ne v w eval_points hk hk_even hω h2 hvw
+      show Fintype.card (↑{α : F | friFold v α eval_points hk = friFold w α eval_points hk}) ≤ k / 2
+      exact bad_alpha_set_finite_of_ne v w eval_points hk hk_even hω h2 hvw
     have h_all_card : Fintype.card All = (Fintype.card { α : F // α ∈ Bad }) ^ l := by
       classical
       let e : All ≃ (Fin l → { α : F // α ∈ Bad }) :=

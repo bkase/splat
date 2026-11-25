@@ -34,8 +34,12 @@ then the probability all t samples fail is (1 - d/m)^t.
 import Mathlib.Tactic
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Independence.Basic
-import Mathlib.Data.ENNReal.Basic
-import Mathlib.Data.Set.Lattice
+import Mathlib.Basic.ENNReal.Basic
+import Mathlib.Data.Set.Lattice.Bounded
+import Mathlib.Data.Set.Lattice.Disjoint
+import Mathlib.Data.Set.Lattice.Image
+import Mathlib.Data.Set.Lattice.Indexed
+import Mathlib.Data.Set.Lattice.Order
 
 
 noncomputable section
@@ -83,13 +87,11 @@ theorem reduced_matrix_zero_check_bound
   simp +decide [ mul_pow, ENNReal.mul_inv ];
   rw [ ENNReal.inv_pow ];
   erw [ MeasureTheory.Measure.count_apply, MeasureTheory.Measure.count_apply ];
-  · rw [ Set.encard, Set.encard ];
-    simp +decide [ ENat.card ];
-    rw [ Cardinal.mk_congr ];
-    rotate_right;
-    exact ( Fin t → { r : Fin m // check r } );
-    · simp +decide [ Cardinal.mk_pi ];
-    · exact ⟨ fun x => fun i => ⟨ x.val i, x.prop i ⟩, fun x => ⟨ fun i => x i |>.1, fun i => x i |>.2 ⟩, fun x => rfl, fun x => rfl ⟩;
+  · have hpi : {ω : Fin t → Fin m | ∀ (i : Fin t), check (ω i)}
+        = Set.pi Set.univ (fun _ : Fin t => {r : Fin m | check r}) := by
+      ext ω; simp [Set.mem_pi]
+    rw [hpi, Set.encard_pi_eq_prod_encard]
+    simp
   · exact trivial
   · exact DiscreteMeasurableSpace.forall_measurableSet (s := {ω : Fin t → Fin m | ∀ (i : Fin t), check (ω i)})
 

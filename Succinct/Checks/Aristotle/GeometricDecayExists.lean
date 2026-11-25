@@ -24,7 +24,7 @@ Key insight: For 0 < r < 1, lim_{t→∞} r^t = 0, so eventually r^t < ε.
 -/
 
 import Mathlib.Tactic
-import Mathlib.Data.ENNReal.Basic
+import Mathlib.Basic.ENNReal.Basic
 
 
 noncomputable section

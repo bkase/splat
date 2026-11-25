@@ -20,30 +20,7 @@ scoped notation "∥" x "∥₀" => weightVec x
 lemma weightVec_eq_zero_iff (x : Fin n → F) :
     ∥x∥₀ = 0 ↔ x = 0 := by
   classical
-  -- helper facts about the subtype `{ i // x i ≠ 0 }`
-  have h0 :
-      ∥x∥₀ = 0 ↔ IsEmpty { i : Fin n // x i ≠ 0 } := by
-    simpa [weightVec] using
-      (Fintype.card_eq_zero_iff :
-        Fintype.card { i : Fin n // x i ≠ 0 } = 0 ↔ _)
-  have h1 :
-      IsEmpty { i : Fin n // x i ≠ 0 } ↔ ∀ i : Fin n, x i = 0 := by
-    constructor
-    · intro h i
-      by_contra hxi
-      exact h.elim ⟨i, hxi⟩
-    · intro hx
-      refine ⟨?_⟩
-      rintro ⟨i, hi⟩
-      exact hi (hx i)
-  -- wrap up
-  constructor
-  · intro hx
-    have hxzero : ∀ i : Fin n, x i = 0 := (h1.mp ((h0.mp hx)))
-    funext i; simpa using hxzero i
-  · intro hx
-    subst hx
-    simp [weightVec]
+  simp [weightVec, funext_iff]
 
 /-- **0-homogeneity (invariance under nonzero scaling)**:
     for `a ≠ 0`, `weightVec (a • x) = weightVec x`. -/
@@ -161,7 +138,8 @@ lemma weightVec_triangle (x y : Vec F n) :
         Fintype.card Sxy ≤ Fintype.card (Sum Sx Sy) :=
       Fintype.card_le_of_injective f hf
     simpa [Fintype.card_sum] using hle
-  simpa [Sxy, Sx, Sy, weightVec] using hcard
+  simp only [weightVec]
+  exact hcard
 
 /-- Weight (ℓ₀ "norm") of a set of vectors:
     the minimum Hamming weight of any element, in `WithTop ℕ`

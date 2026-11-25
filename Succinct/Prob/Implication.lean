@@ -1,7 +1,11 @@
-import Mathlib.Data.ENNReal.Basic
+import Mathlib.Basic.ENNReal.Basic
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Independence.Basic
-import Mathlib.Data.Set.Lattice
+import Mathlib.Data.Set.Lattice.Bounded
+import Mathlib.Data.Set.Lattice.Disjoint
+import Mathlib.Data.Set.Lattice.Image
+import Mathlib.Data.Set.Lattice.Indexed
+import Mathlib.Data.Set.Lattice.Order
 
 /-!
 # Probabilistic Implication (Section 1.4)
