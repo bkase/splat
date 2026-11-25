@@ -1,5 +1,9 @@
-import Mathlib.Data.Finset.Basic
-import Succinct.LinearAlgebra
+module
+
+public import Mathlib.Data.Finset.Basic
+public import Succinct.LinearAlgebra
+
+public section
 
 noncomputable section
 
@@ -15,16 +19,19 @@ structure LinearCode (F : Type*) [Field F] where
   (G   : Mat F m n)
 
 /-- Encode a message vector `x : F^n` to the codeword `G x : F^m`. -/
+@[expose]
 def encode (C : LinearCode F) (x : Vec F C.n) : Vec F C.m :=
   Matrix.mulVec C.G x
 
 scoped infixl:70 " ⇀ₑ " => encode
 
 /-- Generator matrix for the k‑repeated code: `k` vertical copies of `Iₙ`. -/
+@[expose]
 def repeatGen {F : Type*} [Field F] (k n : ℕ) : Mat F (k * n) n :=
   fun (i : Fin (k * n)) (j : Fin n) => if i.val % n = j.val then (1 : F) else 0
 
 /-- The k‑repeated linear code of length `k*n` and dimension `n`. -/
+@[expose]
 def repeatCode {F : Type*} [Field F] (k n : ℕ) : LinearCode F :=
   { m := k * n, n := n, G := repeatGen (F := F) k n }
 
@@ -53,6 +60,7 @@ lemma repeatCode_encode {F : Type*} [Field F] (k n : ℕ) (hn : 0 < n) (x : Vec 
     (repeatCode (F := F) k n) ⇀ₑ x
       = fun i : Fin (k * n) => x ⟨i.val % n, Nat.mod_lt _ hn⟩ := by
   classical
+  unfold repeatCode
   funext i
   let j0 : Fin n := ⟨i.val % n, Nat.mod_lt _ hn⟩
   have hsum :
@@ -77,7 +85,7 @@ lemma repeatCode_encode {F : Type*} [Field F] (k n : ℕ) (hn : 0 < n) (x : Vec 
       sum_single_kronecker (F := F) (n := n) x j0
     -- combine the two rewrites
     exact hdelta.trans hsingle
-  simp [repeatCode, encode, Mat.mulVec_apply, hsum, j0]
+  simp [encode, Mat.mulVec_apply, hsum, j0]
 
 end Codes
 end SuccinctProofs

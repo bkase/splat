@@ -1,0 +1,27 @@
+# Predictive mechanical preflight for a Palomar registry submission.
+#
+# This calls Palomar's reusable verification workflow at an exact commit of
+# PalomarRegistry/PalomarSubmission. It runs the same verifier under the
+# checked-in `palomar-standard-v1` profile but carries no Palomar state or
+# credentials: the result is advisory and is not itself a registry submission.
+#
+# Keep `pipeline_commit` equal to the `uses` SHA below; the caller asserts
+# this pairing.
+name: Palomar preflight
+
+on:
+  push:
+    branches: [main, palomar-submission]
+  workflow_dispatch:
+
+jobs:
+  palomar-preflight:
+    uses: PalomarRegistry/PalomarSubmission/.github/workflows/submission.yml@14aa8d6b3c2f14a8540605e37144560b9a00e7e7
+    with:
+      repository: ${{ github.repository }}
+      commit: ${{ github.sha }}
+      pipeline_commit: 14aa8d6b3c2f14a8540605e37144560b9a00e7e7
+      request_id: preflight001
+      mode: full
+      execution_profile: palomar-standard-v1
+      options: '{"comparator_config_path":"comparator.json","authorization_relationship":"I am a responsible author or maintainer"}'

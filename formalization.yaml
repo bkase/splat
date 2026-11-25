@@ -1,0 +1,229 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml v0.4.
+version: "v0.4"
+
+project:
+  name: "SPLAT — Succinct Proofs and Linear Algebra, formalized"
+  description: >-
+    A Lean 4 / Mathlib formalization of the linear-algebra toolkit for
+    succinct proof systems developed by Evans and Angeris in
+    "Succinct Proofs and Linear Algebra" (IACR eprint 2023/1478):
+    linear codes over finite fields with Reed-Solomon, Hadamard, and
+    Kronecker-product constructions; the probabilistic implication
+    calculus of Section 1.4; the zero, sparsity, matrix, and polynomial
+    proximity checks of Section 3; and the FRI low-degree test analysis of
+    Section 4, including folding completeness, proximity preservation,
+    and fixed-witness checking bounds. Eleven results are compared by
+    the Palomar Comparator.
+  authors:
+    - "François Garillot"
+    - "Brandon Kase"
+  license: "MIT"
+  responsible_maintainers:
+    - "François Garillot"
+
+classification:
+  arxiv: ["cs.CR"]
+  msc2020: ["94A60", "11T71"]
+
+sources:
+  - title: "Succinct Proofs and Linear Algebra"
+    authors:
+      - "Alex Evans"
+      - "Guillermo Angeris"
+    id: "https://eprint.iacr.org/2023/1478"
+    type: "paper"
+    location: "https://eprint.iacr.org/2023/1478"
+    relationship: "formalizes"
+    note: >-
+      The submitted development formalizes the paper's Sections 1.1-1.4
+      (vectors, matrices, subspaces, Vandermonde matrices, linear codes,
+      weights and distances, and the probabilistic implication calculus),
+      Section 3 (sparsity, zero, matrix-zero, and polynomial-zero
+      proximity checks), and the core one-step reduction of Section 4.2
+      (FRI folding preserves proximity; the bad-challenge set for
+      distinct vectors has cardinality at most k/2), together with
+      Reed-Solomon folding completeness and fixed-witness FRI soundness
+      for one challenge or independent repetitions of the same fold.
+      The full multi-round protocol assembly is not formalized end to end.
+    license: "unknown"
+    author_endorsement: "not-contacted"
+
+related_formalizations: []
+
+status:
+  scope: >-
+    Formalized: the paper's linear-algebra preliminaries, the
+    probabilistic implication calculus, the Section 3 proximity checks,
+    the FRI fold, the one-step proximity reduction, the bad-alpha bound,
+    Reed-Solomon folding completeness, and fixed-witness FRI soundness
+    for one challenge or independent repetitions of the same fold,
+    over finite fields with the stated characteristic hypotheses.
+    Not formalized: the complete multi-round FRI protocol with
+    commitment semantics and the end-to-end soundness theorem of the
+    paper's Section 4; the paper's closing conjecture on proximity
+    testing with linear error-correcting codes. The auxiliary theorem
+    `SuccinctProofs.evalCode_injective_of_distinct_false`, a recorded
+    refutation of an initially claimed (false) injectivity statement,
+    is stated over `Type` rather than `Type*`.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: []
+  main_results:
+    - "SPLAT.fri_folding_preserves_proximity"
+    - "SPLAT.bad_alpha_set_bound"
+    - "SPLAT.fri_completeness"
+    - "SPLAT.fri_single_round_soundness"
+    - "SPLAT.fri_multi_round_soundness"
+    - "SPLAT.unique_decoding_radius"
+    - "SPLAT.singleton_bound"
+    - "SPLAT.kronecker_product_distance"
+    - "SPLAT.hadamard_distance_formula"
+    - "SPLAT.polynomial_zero_check"
+    - "SPLAT.reduced_matrix_zero_check"
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["Aristotle (Harmonic)"]
+      framework: "Aristotle (https://aristotle.harmonic.fun)"
+      tool_setup: >-
+        Most original proof search was performed by the Aristotle agent
+        of Harmonic, as recorded in the file headers. The development
+        was subsequently ported to Lean v4.36.0 / Mathlib v4.36.0 and
+        converted to the Lean module system with further agent
+        assistance; the port was reviewed and completed manually.
+      cost:
+        wall_time: "not tracked"
+        spend_usd: "not tracked"
+        hardware: "local machine"
+      prompting_notes: "n/a"
+  spend_usd: "not tracked"
+  notes: >-
+    Human authors directed the formalization scope and reviewed the
+    agent-produced proofs; no proof was accepted without compiling
+    against Mathlib at the pinned revision.
+
+fidelity:
+  divergences: >-
+    Folded-code membership is stated as an existential witness rather
+    than a submodule literal. Codes are stated as generator matrices,
+    and probabilistic implication is expanded to its measure inequality.
+    These changes unfold the internal definitions. FRI soundness concerns
+    a fixed witness and independent repetitions of the same fold check.
+    It does not establish soundness of the recursive FRI protocol.
+    Distinctness, nonzero evaluation points, even domain length, and
+    2 ≠ 0 are explicit hypotheses where required.
+
+review:
+  status: "self-assessed"
+  reviewers:
+    - "François Garillot"
+  notes: >-
+    The submission statements restate existing proved results. Local
+    Comparator checks accept all eleven solutions with only the three
+    standard Lean axioms. Solution.lean contains no `sorry` or
+    `native_decide`. The repeated FRI check uses a fixed witness.
+
+alignment:
+  namespace: "SPLAT"
+  statements:
+    - source: "Section 4.2, one-step reduction (proximity part)"
+      lean: "SPLAT.fri_folding_preserves_proximity"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Challenge.lean restates the theorem with self-contained
+        definitions; Solution.lean proves it from
+        SuccinctProofs.fri_folding_preserves_proximity in
+        Succinct/Fri/FRIConstruction.lean, which corresponds to the
+        paper's argument that the fold of a q-close vector is q-close
+        to the folded code.
+    - source: "Section 4.2, bad-challenge bound (folding is injective for most alpha)"
+      lean: "SPLAT.bad_alpha_set_bound"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Challenge.lean restates the theorem with self-contained
+        definitions; Solution.lean proves it from
+        SuccinctProofs.bad_alpha_set_finite_of_ne in
+        Succinct/Fri/FRIConstruction.lean, which bounds by k/2 the
+        number of challenges alpha for which two distinct vectors have
+        equal FRI folds.
+    - source: "Section 4.2, one-step reduction (completeness part)"
+      lean: "SPLAT.fri_completeness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_completeness. Folding evaluations
+        of n coefficients gives evaluations of (n+1)/2 coefficients at
+        squared evaluation points under the stated coset hypotheses.
+    - source: "Section 4.2, fixed-witness fold checking"
+      lean: "SPLAT.fri_single_round_soundness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_single_round_soundness. One
+        random challenge has error at most (k/2)/|F| against a fixed
+        witness in the subspace.
+    - source: "Independent repetition of the Section 4.2 fixed-witness fold check"
+      lean: "SPLAT.fri_multi_round_soundness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_multi_round_soundness. Independent
+        challenges repeat the same fold check against the same witness,
+        with error at most (k/2)^l / |F|^l. This does not assemble the
+        complete recursive FRI protocol.
+    - source: "Section 3.2.3, unique decoding radius"
+      lean: "SPLAT.unique_decoding_radius"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.unique_decoding_radius. Below half
+        the finite subspace distance, there is a unique nearby matrix
+        whose columns belong to the subspace.
+    - source: "Section 1.3, Singleton bound"
+      lean: "SPLAT.singleton_bound"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.singleton_bound. For a generator
+        matrix with n > 0 message coordinates and m rows, its distance
+        is at most m - n + 1, with natural-number subtraction.
+    - source: "Section 3.1, Kronecker product distance"
+      lean: "SPLAT.kronecker_product_distance"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.kronecker_product_distance. The
+        distance of the Kronecker matrix is at least the product of
+        the component distance bounds.
+    - source: "Section 1.3.3, Hadamard distance"
+      lean: "SPLAT.hadamard_distance_formula"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from hadamard_distance_formula_gated. Every nonzero
+        message of length n > 0 has encoding weight |F|^n - |F|^(n-1).
+    - source: "Section 3.1.4, polynomial zero check"
+      lean: "SPLAT.polynomial_zero_check"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.polynomial_zero_check. A random
+        evaluation of a polynomial of degree below n has false-zero
+        probability at most (n-1)/|F| under the stated code hypotheses.
+    - source: "Section 3.1.3, reduced matrix zero check"
+      lean: "SPLAT.reduced_matrix_zero_check"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.reduced_matrix_zero_check. With
+        code distance at least d, t independent matrix checks have
+        false-zero probability at most (1-d/m)^t.
+
+acknowledgements: >-
+  Mathlib and its contributors; the Batteries, Aesop, and proof-widget
+  ecosystems; Harmonic's Aristotle agent, which produced the original
+  proofs under the direction of the authors.

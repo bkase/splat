@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+module
+
+public import Mathlib.Tactic
+
+public section
 
 /-! ### Polynomial Zero Lemmas
 

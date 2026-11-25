@@ -1,16 +1,19 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Matrix.Mul
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.LinearAlgebra.Lagrange
+module
 
-import Succinct.LinearAlgebra
-import Succinct.Vandermonde
-import Succinct.Codes.Core
-import Succinct.Codes.EvalCode
-import Succinct.Codes.Aristotle.PolynomialZeroLemmas
-import Succinct.Codes.Aristotle.PolynomialCoeffSumLemma
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Lagrange
+public import Succinct.LinearAlgebra
+public import Succinct.Vandermonde
+public import Succinct.Codes.Core
+public import Succinct.Codes.EvalCode
+public import Succinct.Codes.Aristotle.PolynomialZeroLemmas
+public import Succinct.Codes.Aristotle.PolynomialCoeffSumLemma
+
+public section
 
 noncomputable section
 open scoped BigOperators
@@ -30,20 +33,22 @@ variable {F : Type*} [Field F]
 variable {n : ℕ}
 
 /-- Define a polynomial from a vector of coefficients. -/
+@[expose]
 def polyOfVec (x : Vec F n) : Polynomial F :=
   ∑ j : Fin n, monomial j (x j)
 
 /-- Evaluating the polynomial constructed from a vector is the same as `evalPolyOfVec`. -/
 lemma polyOfVec_eval (x : Vec F n) (β : F) :
     (polyOfVec x).eval β = evalPolyOfVec x β := by
-  simp [polyOfVec, Polynomial.eval_finset_sum, evalPolyOfVec]
+  simp [polyOfVec, Polynomial.eval_finsetSum, evalPolyOfVec, Polynomial.eval_monomial]
 
 /-- The degree of the polynomial constructed from a vector `x` of length `n` is strictly less than `n`. -/
 lemma polyOfVec_degree_lt (x : Vec F n) : (polyOfVec x).degree < n := by
   rw [polyOfVec, Polynomial.degree_lt_iff_coeff_zero]
   simp [Polynomial.coeff_monomial]
-  exact fun m hm => Finset.sum_eq_zero fun i hi =>
-    if_neg (by linarith [Fin.is_lt i])
+  exact fun m hm => Finset.sum_eq_zero fun i hi => by
+    simp only [Finsupp.single_apply]
+    rw [ite_eq_right (by linarith [Fin.is_lt i, hm])]
 
 /-- The map `polyOfVec` is injective. -/
 lemma polyOfVec_injective : Function.Injective (polyOfVec (F := F) (n := n)) := by
@@ -51,7 +56,7 @@ lemma polyOfVec_injective : Function.Injective (polyOfVec (F := F) (n := n)) := 
   ext j
   unfold polyOfVec at hxy
   replace hxy := congr_arg (fun p => p.coeff j) hxy
-  simp_all [Polynomial.coeff_monomial, Finset.sum_ite, Fin.val_inj]
+  simp_all [Polynomial.coeff_monomial, Finset.sum_ite, Fin.val_inj, Finsupp.single_apply]
 
 /-! ### Polynomial-Vector Equivalence
 
@@ -112,7 +117,11 @@ lemma polyOfVec_natDegree_lt (x : Vec F n) (hn : 0 < n) : (polyOfVec x).natDegre
       · -- If i ≠ j.val, then the ite returns 0
         aesop
     -- Now sum over all j
-    simp [h_zero_each]
+    have hsum : (∑ j : Fin n, (monomial (↑j) (x j)) : Polynomial F).coeff i
+        = ∑ j : Fin n, (monomial (↑j) (x j)).coeff i :=
+      map_sum (Polynomial.lcoeff F i) _ _
+    rw [hsum]
+    exact Finset.sum_eq_zero fun c _ => h_zero_each c
 
   -- Now use the fact that if all coefficients at index ≥ n are zero, then natDegree < n
   by_cases hp : polyOfVec x = 0
@@ -125,7 +134,7 @@ lemma polyOfVec_natDegree_lt (x : Vec F n) (hn : 0 < n) : (polyOfVec x).natDegre
     -- By definition of natDegree, it's the largest index with nonzero coefficient
     -- Since all coefficients at index ≥ n are zero, natDegree < n
     by_contra h_contra
-    push_neg at h_contra
+    push Not at h_contra
     -- If natDegree ≥ n, then the coefficient at natDegree is zero (by h_coeff_zero)
     -- But for a nonzero polynomial, the coefficient at natDegree is nonzero
     -- Contradiction!
@@ -145,6 +154,7 @@ lemma polyOfVec_natDegree_lt (x : Vec F n) (hn : 0 < n) : (polyOfVec x).natDegre
 
     For a polynomial p with natDegree < n, we extract its first n coefficients
     to form a vector of length n. -/
+@[expose]
 def polyOfVecCoeffs (p : Polynomial F) (hDeg : p.natDegree < n) : Vec F n := fun j => p.coeff j
 
 /-- For any polynomial with natDegree < n, reconstructing from its coefficients gives the same polynomial.
@@ -157,7 +167,8 @@ lemma polyOfVec_coeff_right_inverse (p : Polynomial F) (hDeg : p.natDegree < n) 
   -- By definition of polynomial coefficients, we can write p as the sum of its monomials.
   have h_poly_eq_sum : p = Finset.sum (Finset.range n) (fun j => Polynomial.monomial j (p.coeff j)) := by
     exact SuccinctProofs.as_sum_range_of_natDegree_lt hDeg
-  simpa only [Finset.sum_range, Fin.cast_val_eq_self] using h_poly_eq_sum.symm
+  simpa only [polyOfVec, polyOfVecCoeffs, Finset.sum_range, Fin.cast_val_eq_self]
+    using h_poly_eq_sum.symm
 
 /-- For any vector, extracting coefficients and reconstructing gives the same vector.
 
@@ -169,8 +180,8 @@ lemma polyOfVec_coeff_left_inverse (x : Vec F n) (hn : 0 < n) :
   -- By definition of `polyOfVec`, we know that its coefficients are exactly `x`.
   ext j
   simp [polyOfVecCoeffs]
-  simp +decide [polyOfVec, Polynomial.coeff_monomial]
-  simp +decide [Finset.sum_ite, Fin.val_inj]
+  simp +decide [polyOfVec, Polynomial.coeff_monomial, Finsupp.single_apply,
+    Finset.sum_ite_eq', Fin.val_inj]
 
 /-- Equivalence between vectors of length n and polynomials with natDegree < n.
 
@@ -178,12 +189,13 @@ lemma polyOfVec_coeff_left_inverse (x : Vec F n) (hn : 0 < n) :
     The equivalence shows:
     - polyOfVec: Vec F n → {p : Polynomial F | natDegree < n} is bijective
     - polyOfVecCoeffs: {p | natDegree < n} → Vec F n is the inverse -/
+@[expose]
 def polyOfVecEquiv (hn : 0 < n) : Vec F n ≃ {p : Polynomial F // p.natDegree < n} where
   toFun := fun x => ⟨polyOfVec x, polyOfVec_natDegree_lt x hn⟩
   invFun := fun p => polyOfVecCoeffs p.1 p.2
   left_inv := fun x => polyOfVec_coeff_left_inverse x hn
   right_inv := fun p => by
-    apply Subtype.eq
+    apply Subtype.ext
     exact polyOfVec_coeff_right_inverse p.1 p.2
 
 /-- **Polynomial Zero Check via Coefficients**.
@@ -264,10 +276,12 @@ variable [DecidableEq (Fin m)]
 
 /-- Lagrange basis polynomial `ℓ_j` coefficients for point `α[j]`.
     This polynomial evaluates to 1 at `α[j]` and 0 at all other `α[i]` (i ≠ j). -/
+@[expose]
 def lagrangeBasisCoeffs (α : EvalPoints m F) (j : Fin m) : Vec F n :=
   fun k => (Lagrange.basis Finset.univ α j).coeff k
 
 /-- Evaluate the j-th Lagrange basis polynomial at a point `β`. -/
+@[expose]
 def lagrangeBasisEval (n : ℕ) (α : EvalPoints m F) (j : Fin m) (β : F) : F :=
   evalPolyOfVec (n := n) (lagrangeBasisCoeffs α j) β
 
@@ -276,6 +290,7 @@ def lagrangeBasisEval (n : ℕ) (α : EvalPoints m F) (j : Fin m) (β : F) : F :
 
     This definition avoids expanding into polynomial coefficients.
     PROVED by Aristotle (Batch 13+, fd2195d4-cec3-45f5-87a3-c78b606cda96). -/
+@[expose]
 def lagrangeBasisEvalDirect (α : EvalPoints m F) (j : Fin m) (β : F) : F :=
   ∏ i : Fin m, if i = j then 1 else (β - α i) / (α j - α i)
 
@@ -289,9 +304,11 @@ lemma lagrangeBasis_eval_eq_one (α : EvalPoints m F) (hDistinct : ∀ i j, i �
     lagrangeBasisEvalDirect α j (α j) = 1 := by
   -- By definition of Lagrange basis polynomial, for any i ≠ j,
   -- the term (α_j - α_i) / (α_j - α_i) simplifies to 1.
-  have h_lagrange : ∀ i : Fin m, i ≠ j → (α j - α i) / (α j - α i) = 1 := by
-    exact fun i hi => div_self (sub_ne_zero_of_ne (Ne.symm (hDistinct i j hi)))
-  convert Finset.prod_eq_one _ <;> aesop
+  unfold lagrangeBasisEvalDirect
+  refine Finset.prod_eq_one fun i _ => ?_
+  by_cases h : i = j
+  · simp [h]
+  · simp [h, div_self (sub_ne_zero_of_ne (Ne.symm (hDistinct i j h)))]
 
 /-- The Lagrange basis polynomial evaluates to 0 at all other points.
     PROVED by Aristotle (Batch 13+, fd2195d4-cec3-45f5-87a3-c78b606cda96).
@@ -302,6 +319,7 @@ lemma lagrangeBasis_eval_eq_zero (α : EvalPoints m F) (hDistinct : ∀ i j, i �
   exact Finset.prod_eq_zero (Finset.mem_univ i) (by aesop)
 
 /-- Interpolate: recover coefficient vector from evaluation vector `y`. -/
+@[expose]
 def lagrangeInterp (α : EvalPoints m F) (y : Vec F m) : Vec F n :=
   fun k : Fin n => ∑ j : Fin m, y j * (lagrangeBasisCoeffs α j) k
 
@@ -389,19 +407,23 @@ theorem lagrange_interp (α : EvalPoints m F) (y : Vec F m)
     intro a _ b _ hab
     by_contra hne
     exact hDistinct a b hne hab
+  show (fun i : Fin m => ((evalCode (n := n) α) ⇀ₑ lagrangeInterp α y) i) = y
   ext idx
   -- evalCode_encode_eq_eval : (evalCode α) ⇀ₑ x = fun i => evalPolyOfVec x (α i)
-  simp only [evalCode_encode_eq_eval]
+  have henc : (evalCode (n := n) α) ⇀ₑ (lagrangeInterp α y)
+      = fun i => evalPolyOfVec (lagrangeInterp α y) (α i) :=
+    evalCode_encode_eq_eval α (lagrangeInterp α y)
+  rw [henc]
+  show evalPolyOfVec (lagrangeInterp α y) (α idx) = y idx
   rw [evalPolyOfVec_lagrangeInterp α y (α idx) hn h_inj]
-  have h_basis_eval (j : Fin m) :
-      (Lagrange.basis Finset.univ α j).eval (α idx) = if j = idx then 1 else 0 := by
-    by_cases hji : j = idx
-    · simp only [hji, ↓reduceIte]
-      exact Lagrange.eval_basis_self h_inj (Finset.mem_univ idx)
-    · rw [if_neg hji]
-      exact Lagrange.eval_basis_of_ne hji (Finset.mem_univ idx)
-  simp_rw [h_basis_eval]
-  simp [Finset.sum_ite_eq']
+  calc ∑ j : Fin m, y j * (Lagrange.basis Finset.univ α j).eval (α idx)
+      = y idx * (Lagrange.basis Finset.univ α idx).eval (α idx) :=
+        Finset.sum_eq_single idx (fun b _ hbne =>
+          mul_eq_zero.mpr (Or.inr (Lagrange.eval_basis_of_ne hbne (Finset.mem_univ idx))))
+          (fun hout => absurd (Finset.mem_univ idx) hout)
+    _ = y idx := by
+        rw [Lagrange.eval_basis_self h_inj (Finset.mem_univ idx)]
+        simp
 
 /-- Evaluating polynomials is linear with respect to subtraction.
     PROVED by Aristotle. -/
@@ -420,8 +442,10 @@ theorem evalCode_injective_of_le (α : EvalPoints m F)
     have h_distinct : Function.Injective α := by
       exact fun i j hij => Classical.not_not.1 fun hij' => hDistinct i j hij' hij
     have h_poly_eq : ∀ i : Fin m, (polyOfVec x).eval (α i) = (polyOfVec y).eval (α i) := by
-      simp_all [evalCode_encode_eq_eval, funext_iff]
-      simpa [polyOfVec_eval] using hxy
+      have hxy' : (evalCode (n := n) α) ⇀ₑ x = (evalCode (n := n) α) ⇀ₑ y := hxy
+      rw [evalCode_encode_eq_eval, evalCode_encode_eq_eval] at hxy'
+      intro i
+      simpa [polyOfVec_eval] using congrFun hxy' i
     have h_poly_eq_zero : polyOfVec x - polyOfVec y = 0 := by
       apply poly_eq_zero_of_distinct_roots h_distinct
       · aesop
@@ -450,7 +474,7 @@ theorem evalCode_injective_iff (α : EvalPoints m F)
   constructor
   · intro h_inj
     by_contra h_gt
-    push_neg at h_gt
+    push Not at h_gt
     have h_not_inj := evalCode_not_injective_of_gt α h_gt
     contradiction
   · intro h_le
@@ -461,17 +485,29 @@ theorem evalCode_injective_iff (α : EvalPoints m F)
 
     The theorem should require n ≤ m instead. -/
 theorem evalCode_injective_of_distinct_false :
-    ¬ (∀ {F : Type*} [Field F] {m n : ℕ} (α : EvalPoints m F),
+    ¬ (∀ {F : Type} [Field F] {m n : ℕ} (α : EvalPoints m F),
         (∀ i j, i ≠ j → α i ≠ α j) → Function.Injective (fun x : Vec F n => (evalCode (n := n) α) ⇀ₑ x)) := by
-  push_neg
-  refine' ⟨_, _, 2, 3, _, _, _⟩
-  exact ULift (ZMod 3)
-  refine' { .. }
-  native_decide +revert
-  native_decide +revert
-  exact fun i => if i = 0 then 0 else 1
-  · decide +revert
-  · native_decide +revert
+  intro h
+  -- Two evaluation points 0 and 1 over `ZMod 3`, messages of length 3.
+  have hdist : ∀ i j : Fin 2, i ≠ j →
+      (fun i => if (i : ℕ) = 0 then (0 : ZMod 3) else 1) i ≠
+      (fun j => if (j : ℕ) = 0 then (0 : ZMod 3) else 1) j := by decide
+  have hinj := @h (ZMod 3) _ 2 3 (fun i => if (i : ℕ) = 0 then (0 : ZMod 3) else 1) hdist
+  -- The zero message and `(0, 2, 1)` evaluate identically at both points,
+  -- since `2T + T²` vanishes at `T = 0` and `T = 1` over `ZMod 3`.
+  have hEq : (evalCode (m := 2) (n := 3) (fun i => if (i : ℕ) = 0 then (0 : ZMod 3) else 1)) ⇀ₑ
+        (fun _ => (0 : ZMod 3))
+      = (evalCode (m := 2) (n := 3) (fun i => if (i : ℕ) = 0 then (0 : ZMod 3) else 1)) ⇀ₑ
+          (fun j => if (j : ℕ) = 0 then 0 else if (j : ℕ) = 1 then 2 else (1 : ZMod 3)) := by
+    funext i
+    fin_cases i <;> decide
+  have hNe : (fun _ : Fin 3 => (0 : ZMod 3)) ≠
+      (fun j : Fin 3 => if (j : ℕ) = 0 then 0 else if (j : ℕ) = 1 then 2 else (1 : ZMod 3)) := by
+    intro hcon
+    have h2 := congrFun hcon (⟨1, by omega⟩ : Fin 3)
+    norm_num at h2
+    exact absurd h2 (by decide)
+  exact hNe (hinj hEq)
 
 end Lagrange
 

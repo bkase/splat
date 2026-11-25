@@ -1,13 +1,17 @@
-import Mathlib.Data.Finset.Card
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.LinearAlgebra.Matrix.Notation
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.LinearAlgebra.Dimension.Free
-import Mathlib.Algebra.Module.Submodule.Basic
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Hamming
+module
+
+public import Mathlib.Data.Finset.Card
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.Notation
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.Algebra.Module.Submodule.Basic
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Hamming
+
+public section
 
 noncomputable section
 
@@ -30,26 +34,31 @@ variable {F : Type*} [Field F] [DecidableEq F]
 variable {k n m : ℕ}
 
 /-- Subspace distance: minimum weight of nonzero vectors in V -/
+@[expose]
 def subspaceDistance (V : Submodule F (Vec F k)) : WithTop ℕ :=
   sInf { w : WithTop ℕ | ∃ x : Vec F k, x ∈ V ∧ x ≠ 0 ∧ w = ∥x∥₀ }
 
 scoped notation "∥" V "∥ₛ₀" => subspaceDistance V
 
 /-- Number of nonzero rows in a matrix -/
+@[expose]
 def nonZeroRows (X : Mat F k n) : ℕ :=
   Fintype.card { i : Fin k | X.row i ≠ 0 }
 
 /-- Column of a matrix -/
+@[expose]
 def col (A : Mat F k n) (j : Fin n) : Vec F k :=
   fun i => A i j
 
 /-- q-Close to subspace -/
+@[expose]
 def qCloseToSubspace (X : Mat F k n) (V : Submodule F (Vec F k)) (q : ℕ) : Prop :=
   ∃ Y : Mat F k n,
     (∀ j : Fin n, col Y j ∈ V) ∧
     (nonZeroRows (X - Y) ≤ q)
 
 /-- Code distance at least d: every nonzero codeword has weight ≥ d -/
+@[expose]
 def codeHasDistanceAtLeast (G : Mat F m n) (d : ℕ) : Prop :=
   ∀ x : Vec F n, x ≠ 0 → ∥Matrix.mulVec G x∥₀ ≥ d
 
@@ -78,7 +87,7 @@ lemma nonZeroRows_sub_le_add (A B : Mat F k n) :
     rw [Finset.mem_filter] at hi
     rw [Finset.mem_union, Finset.mem_filter, Finset.mem_filter]
     by_contra h
-    push_neg at h
+    push Not at h
     apply hi.2
     funext j
     have hA : A.row i = 0 := h.1 (Finset.mem_univ i)
@@ -311,7 +320,7 @@ lemma subspace_distance_contradiction
       have h2 : R.card > m - d := hR
       omega
     · -- d > m case: m - R.card ≤ m < d
-      push_neg at hd
+      push Not at hd
       calc m - R.card ≤ m := Nat.sub_le m R.card
         _ < d := hd
   omega

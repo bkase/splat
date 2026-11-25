@@ -1,10 +1,14 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Codes.HadamardCore
-import Succinct.Codes.Aristotle.HadamardDistanceGatedV2
-import Succinct.Codes.Aristotle.HadamardDistanceBridgeGated
-import Mathlib.Data.Fintype.Perm
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Codes.HadamardCore
+public import Succinct.Codes.Aristotle.HadamardDistanceGatedV2
+public import Succinct.Codes.Aristotle.HadamardDistanceBridgeGated
+public import Mathlib.Data.Fintype.Perm
+
+public section
 
 noncomputable section
 open scoped BigOperators
@@ -35,7 +39,7 @@ variable {n : ℕ}
 lemma exists_nonzero_entry_of_nonzero {x : Vec F n} (hx : x ≠ 0) :
     ∃ i : Fin n, x i ≠ 0 := by
   by_contra h
-  push_neg at h
+  push Not at h
   apply hx
   ext i
   exact h i

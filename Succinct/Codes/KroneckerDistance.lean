@@ -1,10 +1,14 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Codes.Aristotle.KroneckerDistanceMain_solution
-import Mathlib.Data.Fintype.Card
-import Mathlib.Tactic.GeneralizeProofs
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Codes.Aristotle.KroneckerDistanceMain_solution
+public import Mathlib.Data.Fintype.Card
+public import Batteries.Tactic.GeneralizeProofs
+
+public section
 
 /-! ### Kronecker Product Distance (§3.1)
 
@@ -43,6 +47,7 @@ lemma support_product_card {A B : Type*} [Fintype A] [Fintype B]
     For vectors x ∈ 𝔽^k and y ∈ 𝔽^n, their Kronecker product x ⊗ y
     is a vector in 𝔽^{k·n} defined by (x ⊗ y)_{(i,j)} = x_i · y_j.
     We represent this as Fin k → Fin n → F. -/
+@[expose]
 def kronecker_vec {k n : ℕ} (x : Fin k → F) (y : Fin n → F) :
     Fin (k * n) → F :=
   fun p =>
@@ -97,7 +102,7 @@ lemma kronecker_support_card {k m n : ℕ} {m' : ℕ} (G : LinearCode F) (G' : L
       convert ha using 2
       congr
       rw [Nat.add_div] <;> norm_num [Nat.div_eq_of_lt, Fin.is_lt]
-      · rw [Nat.mul_div_cancel _ (by linarith [Fin.is_lt b]), if_neg (Nat.not_le_of_gt (Nat.mod_lt _ (by linarith [Fin.is_lt b])))]
+      · rw [Nat.mul_div_cancel _ (by linarith [Fin.is_lt b]), ite_eq_right (Nat.not_le_of_gt (Nat.mod_lt _ (by linarith [Fin.is_lt b])))]
         simp +decide
       · grind
     · contrapose! h
@@ -111,6 +116,7 @@ lemma kronecker_support_card {k m n : ℕ} {m' : ℕ} (G : LinearCode F) (G' : L
     - Block length: m' · m
     - Message dimension: k · n
     - Generator matrix: G' ⊗ G (Kronecker product of matrices) -/
+@[expose]
 def kroneckerCode (G' G : LinearCode F) : LinearCode F where
   m := G'.m * G.m
   n := G'.n * G.n

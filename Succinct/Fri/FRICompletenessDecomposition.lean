@@ -1,3 +1,5 @@
+module
+
 /-
 FRI Completeness Decomposition (Strategy 2)
 
@@ -17,8 +19,11 @@ Proved by: Aristotle (projects 142dd003-7596-4eb9-8fcf-c901eddb7e06,
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
-import Mathlib.Tactic
-import Succinct.LinearAlgebra
+
+public import Mathlib.Tactic
+public import Succinct.LinearAlgebra
+
+public section
 
 noncomputable section
 
@@ -33,6 +38,7 @@ variable {k n : ℕ}
 Given evaluation points ω : Fin k → F and coefficients coeffs : Fin n → F,
 the Reed-Solomon code consists of evaluations of the polynomial
 p(X) = ∑_{j=0}^{n-1} coeffs_j · X^j at these points. -/
+@[expose]
 def reedSolomonEval (points : Fin k → F) (coeffs : Fin n → F) : Vec F k :=
   fun i => ∑ j : Fin n, coeffs j * (points i) ^ (j.val)
 
@@ -43,6 +49,7 @@ Given coeffs : Fin n → F, extract the even-indexed ones:
 
 This corresponds to the polynomial:
   p_even(Y) = ∑_{j} coeffs_{2j} · Y^j -/
+@[expose]
 def coeffsEven (coeffs : Fin n → F) : Fin ((n + 1) / 2) → F :=
   fun j => coeffs ⟨2 * j.val, by
     have h1 : 2 * j.val < n := by
@@ -57,6 +64,7 @@ Given coeffs : Fin n → F, extract the odd-indexed ones:
 
 This corresponds to the polynomial:
   p_odd(Y) = ∑_{j} coeffs_{2j+1} · Y^j -/
+@[expose]
 def coeffsOdd (coeffs : Fin n → F) : Fin (n / 2) → F :=
   fun j => coeffs ⟨2 * j.val + 1, by
     have h1 : 2 * j.val + 1 < n := by
@@ -73,6 +81,7 @@ polynomial coefficients:
 
 This corresponds to the polynomial:
   p_fold(Y) = p_even(Y) + α · p_odd(Y) -/
+@[expose]
 def coeffsFold (coeffs : Fin n → F) (α : F) : Fin ((n + 1) / 2) → F :=
   fun j =>
     if h : 2 * j.val + 1 < n then
@@ -91,6 +100,7 @@ For each j ∈ {0, ..., k/2 - 1}:
 where ω_{2j} is the evaluation point.
 
 This corresponds to splitting the polynomial into even and odd parts. -/
+@[expose]
 def friFold (v : Vec F k) (α : F) (eval_points : Fin k → F) (hk : k > 0) : Vec F (k / 2) :=
   fun j =>
     let i1 : Fin k := ⟨2 * j.val, by have h2 : j.val < k / 2 := j.2; omega⟩
@@ -210,13 +220,34 @@ lemma coeffsFold_eval
   · rw [Finset.sum_union]
     · simp +decide [Finset.sum_add_distrib, add_mul, mul_assoc, Finset.sum_image]
       rw [Finset.sum_image, Finset.sum_image] <;> simp +decide [Fin.ext_iff]
-      rw [Finset.sum_congr rfl fun x hx => if_pos <| by linarith [Fin.is_lt x, Nat.div_mul_le_self n 2]]
+      rw [Finset.sum_congr rfl fun x hx => ite_eq_left <| by linarith [Fin.is_lt x, Nat.div_mul_le_self n 2]]
       simp +decide [add_assoc, Finset.sum_add_distrib]
-      all_goals grind
+      have hnp : ∀ t : Fin ((n + 1) / 2 - n / 2),
+          ¬(2 * (n / 2 + (t : ℕ)) + 1 < n) := by
+        intro t; have ht := t.isLt; omega
+      have hinjOn1 : Set.InjOn
+          (fun x : Fin (n / 2) => (⟨x.val, by omega⟩ : Fin ((n + 1) / 2)))
+          (↑(Finset.univ : Finset (Fin (n / 2)))) :=
+        fun a _ b _ h => Fin.ext (by simpa using h)
+      have hinjOn2 : Set.InjOn
+          (fun x : Fin ((n + 1) / 2 - n / 2) => (⟨n / 2 + x.val, by omega⟩ : Fin ((n + 1) / 2)))
+          (↑(Finset.univ : Finset (Fin ((n + 1) / 2 - n / 2)))) :=
+        fun a _ b _ h => Fin.ext (by simpa using h)
+      · simp only [hnp]
+        rw [Finset.sum_image hinjOn1, Finset.sum_image hinjOn2]
+        abel
+      · exact fun x y h => Fin.ext (by simpa using h)
+      · exact fun x y h => Fin.ext (by simpa using h)
     · norm_num [Finset.disjoint_left]
-      grind
+      intro a x h
+      have ha := a.isLt
+      have hx := x.isLt
+      omega
   · norm_num [Finset.disjoint_left]
-    grind
+    intro a x h
+    have ha := a.isLt
+    have hx := x.isLt
+    omega
   · ext ⟨x, hx⟩
     simp +decide [Finset.mem_union, Finset.mem_image]
     exact if h : x < n / 2 then Or.inl ⟨⟨x, h⟩, rfl⟩ else Or.inr ⟨⟨x - n / 2, by omega⟩, by rw [add_tsub_cancel_of_le (by omega)]⟩
@@ -339,6 +370,7 @@ lemma eval_split_even_odd_core
 section EvenOddAtFoldedPoint
 
 /-- Polynomial evaluation from coefficients -/
+@[expose]
 def polyEval (coeffs : Fin n → F) (x : F) : F :=
   ∑ j : Fin n, coeffs j * x ^ (j.val)
 
@@ -454,6 +486,7 @@ section FRICompleteness
 
 /-- The folded Reed-Solomon code consists of evaluations of polynomials
 of degree < (n+1)/2 at the squared evaluation points -/
+@[expose]
 def foldedReedSolomonCode
     (folded_eval_points : Fin (k / 2) → F)
     (n_folded : ℕ) : Submodule F (Vec F (k / 2)) where

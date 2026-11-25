@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -47,8 +49,10 @@ With k/2 positions, at most k/2 values of α satisfy all constraints.
 Generated: 2026-03-05
 -/
 
-import Mathlib.Tactic
 
+public import Mathlib.Tactic
+
+public section
 
 noncomputable section
 
@@ -66,6 +70,7 @@ variable {k : ℕ}
     (v[2j] + v[2j+1])/2 + α * (v[2j] - v[2j+1])/(2*ω[2j])
 
     This is linear in α. -/
+@[expose]
 def friFoldGated (v : Fin k → F) (α : F) (ω : Fin k → F) (hk : k > 0) : Fin (k / 2) → F :=
   fun j =>
     let i1 : Fin k := ⟨2 * j.val, by omega⟩

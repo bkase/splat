@@ -1,10 +1,14 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Prob.Implication
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Notation
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Prob.Implication
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Notation
+
+public section
 
 /-! ### Zero Check (§3.1.1)
 
@@ -50,7 +54,7 @@ lemma zero_check {d : ℕ} (G : LinearCode F)
   -- 3. For random r, ℙ[(G ⇀ₑ x) r = 0] = |{i | (G ⇀ₑ x) i = 0}| / m ≤ (m-d)/m
   -- 4. So failure probability (x ≠ 0 but check passes) ≤ 1 - d/m
   by_cases hx : x = 0 <;> simp_all +decide [ Finset.filter_ne', ProbabilityTheory.uniformOn, ProbabilityTheory.cond, MeasureTheory.Measure.restrict_apply, Set.indicator_apply ];
-  · exact le_trans ( by aesop ) ( zero_le _ );
+  · exact le_trans ( by aesop ) ( zero_le );
   · -- Since the distance is at least d, the number of non-zero coordinates in Gx is at least d.
     have h_nonzero_coords : ∑ i : Fin G.m, (if (G ⇀ₑ x) i = 0 then 0 else 1) ≥ d := by
       have h_nonzero_coords : ∑ i : Fin G.m, (if (G ⇀ₑ x) i = 0 then 0 else 1) = ∥G ⇀ₑ x∥₀ := by

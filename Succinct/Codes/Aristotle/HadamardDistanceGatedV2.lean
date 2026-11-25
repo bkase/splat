@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -40,11 +42,13 @@ So the Hadamard code has distance |F|^n - |F|^{n-1} = |F|^{n-1} * (|F| - 1).
 
 -/
 
-import Mathlib.Tactic
-import Mathlib.Data.Fintype.Card
-import Mathlib.Algebra.Field.Basic
-import Mathlib.LinearAlgebra.Dimension.Finrank
 
+public import Mathlib.Tactic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+
+public section
 
 noncomputable section
 
@@ -67,7 +71,8 @@ theorem hyperplane_card {n : ℕ} (x : Fin n → F) (hx : x ≠ 0) :
   -- Consider the linear map $T : F^{n+1} \to F$ defined by $T(r) = \langle r, x \rangle$.
   set T : (Fin (n + 1) → F) →ₗ[F] F := ∑ i, (LinearMap.proj i).smulRight (x i);
   have h_kernel : (Fintype.card {r : Fin (n + 1) → F | T r = 0}) = (Fintype.card F) ^ (n + 1 - 1) := by
-    have h_kernel : LinearMap.ker T ≃ₗ[F] (Fin (n) → F) := by
+    classical
+    have hker : LinearMap.ker T ≃ₗ[F] (Fin (n) → F) := by
       -- Since $T$ is surjective, the kernel of $T$ has dimension $n$.
       have h_kernel_dim : Module.finrank F (LinearMap.ker T) = n := by
         have h_surjective : Function.Surjective T := by
@@ -76,7 +81,13 @@ theorem hyperplane_card {n : ℕ} (x : Fin n → F) (hx : x ≠ 0) :
         have := LinearMap.finrank_range_add_finrank_ker T;
         rw [ LinearMap.range_eq_top.mpr h_surjective ] at this ; norm_num at this ; linarith;
       exact ( LinearEquiv.ofFinrankEq _ _ <| by simp +decide [ h_kernel_dim ] );
-    convert Fintype.card_congr h_kernel.toEquiv using 1 ; simp +decide [ Fintype.card_pi ];
+    have hcard_ker : Fintype.card ↥(LinearMap.ker T) = (Fintype.card F) ^ (n + 1 - 1) := by
+      rw [Fintype.card_congr hker.toEquiv, Fintype.card_pi]
+      simp
+    have he : Fintype.card ↥{r : Fin (n + 1) → F | T r = 0} = Fintype.card ↥(LinearMap.ker T) := by
+      refine Fintype.card_congr ?_
+      exact Equiv.subtypeEquivRight fun r => by simp [LinearMap.mem_ker]
+    rw [he, hcard_ker]
   aesop
 
 /-- **Main Theorem 1**: Count of zero inner products for nonzero x

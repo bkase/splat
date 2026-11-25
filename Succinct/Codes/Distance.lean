@@ -1,5 +1,9 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Hamming
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Hamming
+
+public section
 
 noncomputable section
 
@@ -11,6 +15,7 @@ variable {F : Type*} [Field F] [DecidableEq F]
 
 /-- Distance of a linear code: minimum Hamming weight among nonzero codewords
     (as an infimum in `WithTop ℕ`). -/
+@[expose]
 def distance (C : LinearCode F) : WithTop ℕ :=
   sInf { w : WithTop ℕ |
     ∃ x : Vec F C.n, x ≠ 0 ∧ w = ∥C ⇀ₑ x∥₀ }

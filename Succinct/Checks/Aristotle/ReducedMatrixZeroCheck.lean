@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -31,12 +33,18 @@ then the probability all t samples fail is (1 - d/m)^t.
 
 -/
 
-import Mathlib.Tactic
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Independence.Basic
-import Mathlib.Data.ENNReal.Basic
-import Mathlib.Data.Set.Lattice
 
+public import Mathlib.Tactic
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Independence.Basic
+public import Mathlib.Basic.ENNReal.Basic
+public import Mathlib.Data.Set.Lattice.Bounded
+public import Mathlib.Data.Set.Lattice.Disjoint
+public import Mathlib.Data.Set.Lattice.Image
+public import Mathlib.Data.Set.Lattice.Indexed
+public import Mathlib.Data.Set.Lattice.Order
+
+public section
 
 noncomputable section
 
@@ -47,11 +55,13 @@ open scoped ENNReal BigOperators
 section Definitions
 
 /-- Event-level probabilistic implication: `μ (A ∩ Bᶜ) ≤ p` -/
+@[expose]
 def ProbImpEv {Ω : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) (A B : Set Ω) (p : ℝ≥0∞) : Prop :=
   μ (A ∩ Bᶜ) ≤ p
 
 /-- Helper: The uniform measure on a finite function space Fin t → Fin m. -/
+@[expose]
 def uniformOnFunctions (t m : ℕ) [NeZero m] : Measure (Fin t → Fin m) :=
   Measure.pi (fun _ => Measure.count)
 
@@ -83,13 +93,11 @@ theorem reduced_matrix_zero_check_bound
   simp +decide [ mul_pow, ENNReal.mul_inv ];
   rw [ ENNReal.inv_pow ];
   erw [ MeasureTheory.Measure.count_apply, MeasureTheory.Measure.count_apply ];
-  · rw [ Set.encard, Set.encard ];
-    simp +decide [ ENat.card ];
-    rw [ Cardinal.mk_congr ];
-    rotate_right;
-    exact ( Fin t → { r : Fin m // check r } );
-    · simp +decide [ Cardinal.mk_pi ];
-    · exact ⟨ fun x => fun i => ⟨ x.val i, x.prop i ⟩, fun x => ⟨ fun i => x i |>.1, fun i => x i |>.2 ⟩, fun x => rfl, fun x => rfl ⟩;
+  · have hpi : {ω : Fin t → Fin m | ∀ (i : Fin t), check (ω i)}
+        = Set.pi Set.univ (fun _ : Fin t => {r : Fin m | check r}) := by
+      ext ω; simp [Set.mem_pi]
+    rw [hpi, Set.encard_pi_eq_prod_encard]
+    simp
   · exact trivial
   · exact DiscreteMeasurableSpace.forall_measurableSet (s := {ω : Fin t → Fin m | ∀ (i : Fin t), check (ω i)})
 

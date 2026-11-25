@@ -1,13 +1,17 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Checks.Sparsity
-import Succinct.Checks.Zero
-import Succinct.Prob.Implication
-import Succinct.Checks.Aristotle.ProductMeasureProjection
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Notation
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Checks.Sparsity
+public import Succinct.Checks.Zero
+public import Succinct.Prob.Implication
+public import Succinct.Checks.Aristotle.ProductMeasureProjection
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Notation
+
+public section
 
 /-! ### Sparsity-Zero Composition (§3.2)
 
@@ -127,12 +131,12 @@ lemma sparsity_zero_probabilistic {d : ℕ} (G : LinearCode F)
           have hGm_pos : G.m > 0 := Nat.lt_of_lt_of_le hd_pos hle
           have hGn_pos : G.n > 0 := by
             by_contra h_neg
-            push_neg at h_neg
+            push Not at h_neg
             simp at h_neg
             have : x = 0 := by ext i; exact (Fin.elim0 (h_neg ▸ i))
             contradiction
-          haveI : NeZero G.m := ⟨Nat.ne_of_gt hGm_pos⟩
-          haveI : NeZero G.n := ⟨Nat.ne_of_gt hGn_pos⟩
+          have : NeZero G.m := ⟨Nat.ne_of_gt hGm_pos⟩
+          have : NeZero G.n := ⟨Nat.ne_of_gt hGn_pos⟩
           exact uniform_product_first_coord_bound (fun i => (G ⇀ₑ x) i = 0) (1 - d / G.m) h_zero_check'
 
 end SparsityZeroComposition

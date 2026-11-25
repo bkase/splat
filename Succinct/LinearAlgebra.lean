@@ -1,16 +1,20 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Matrix.Mul
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.LinearAlgebra.Matrix.Notation
-import Mathlib.LinearAlgebra.Basis.Basic
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.LinearAlgebra.Dimension.Free
-import Mathlib.Logic.Equiv.Set
-import Mathlib.Algebra.Module.Submodule.Basic
-import Mathlib.Topology.Algebra.Polynomial
+module
+
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.Notation
+public import Mathlib.LinearAlgebra.Basis.Basic
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.Logic.Equiv.Set
+public import Mathlib.Algebra.Module.Submodule.Basic
+public import Mathlib.Topology.Algebra.Polynomial
+
+public section
 
 noncomputable section
 open scoped BigOperators
@@ -35,9 +39,11 @@ namespace Mat
 variable {m n : ℕ}
 
 /-- j-th column of a matrix as a vector. -/
+@[expose]
 def col (A : Mat F m n) (j : Fin n) : Vec F m := fun i => A i j
 
 /-- i-th row of a matrix as a vector. -/
+@[expose]
 def row (A : Mat F m n) (i : Fin m) : Vec F n := fun j => A i j
 
 /-- Standard expansion for the `i`-th entry of `A x`. -/
@@ -55,10 +61,12 @@ namespace Mat
 variable {m n : ℕ}
 
 /-- Range (image) of a matrix as a subspace of `F^m`. -/
+@[expose]
 def range (A : Mat F m n) : SubspaceVec F m :=
   LinearMap.range (Matrix.mulVecLin A)
 
 /-- Nullspace (kernel) of a matrix as a subspace of `F^n`. -/
+@[expose]
 def nullspace (A : Mat F m n) : SubspaceVec F n :=
   LinearMap.ker (Matrix.mulVecLin A)
 
@@ -89,6 +97,7 @@ variable {m : ℕ}
 
 /-- Given a finite-dimensional subspace, we can represent it as the range
     of a matrix `A`. -/
+@[expose]
 def basisMatrix (V : SubspaceVec (F := F) m) :
     Mat F m (Module.finrank F V) := by
   classical
@@ -107,8 +116,8 @@ lemma range_basisMatrix (V : SubspaceVec (F := F) m) :
         = Submodule.span F
             (Set.range fun j : Fin (Module.finrank F V) =>
               (basisMatrix (F := F) V).col j) := by
-    simpa [Mat.range] using
-      Matrix.range_mulVecLin (basisMatrix (F := F) V)
+    simp only [Mat.range]
+    exact Matrix.range_mulVecLin (basisMatrix (F := F) V)
   -- 2) Those columns are exactly the coerced basis vectors of `V`.
   have hcols :
       (fun j : Fin (Module.finrank F V) =>

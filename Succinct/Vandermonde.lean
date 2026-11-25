@@ -1,10 +1,13 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Matrix.Mul
-import Mathlib.LinearAlgebra.Matrix.DotProduct
+module
 
-import Succinct.LinearAlgebra
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Succinct.LinearAlgebra
+
+public section
 
 noncomputable section
 open scoped BigOperators
@@ -14,16 +17,19 @@ namespace SuccinctProofs
 
 /-! ### Vandermonde matrices and polynomial evaluation view -/
 
+@[expose]
 def EvalPoints (m : ℕ) (F : Type*) [Field F] := Fin m → F
 
 variable {F : Type*} [Field F]
 
 /-- The Vandermonde matrix with rows indexed by `Fin m` and columns `0..n-1`,
     using evaluation points `α : Fin m → F`. Entry is `(α i)^(j)`. -/
+@[expose]
 def vandermonde {m n : ℕ} (α : EvalPoints m F) : Mat F m n :=
   fun i j => (α i) ^ (j : ℕ)
 
 /- Interpret coefficient vector `x : F^n` as a degree `< n` polynomial and evaluate. -/
+@[expose]
 def evalPolyOfVec {n : ℕ} (x : Vec F n) (β : F) : F :=
   ∑ j : Fin n, x j * β^(j : ℕ)
 
@@ -52,6 +58,7 @@ lemma eval_vec_eq_vandermonde_mul {m n : ℕ}
 
 /-- The subspace of evaluation vectors of low-degree polynomials is the
     range of the Vandermonde matrix. -/
+@[expose]
 def evalSubspace {m n : ℕ} (α : EvalPoints m F) : SubspaceVec (F := F) m :=
   Mat.range (n:=n) (vandermonde (F := F) α)
 

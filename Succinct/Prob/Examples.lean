@@ -1,4 +1,10 @@
-import Succinct.Prob.Implication
+module
+
+public import Succinct.Prob.Implication
+
+public section
+
+public section
 
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal

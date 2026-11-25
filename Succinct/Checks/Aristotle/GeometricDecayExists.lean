@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -23,9 +25,11 @@ Key insight: For 0 < r < 1, lim_{t→∞} r^t = 0, so eventually r^t < ε.
 
 -/
 
-import Mathlib.Tactic
-import Mathlib.Data.ENNReal.Basic
 
+public import Mathlib.Tactic
+public import Mathlib.Basic.ENNReal.Basic
+
+public section
 
 noncomputable section
 

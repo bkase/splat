@@ -1,12 +1,16 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.SingletonLemmas
-import Succinct.LinearAlgebra
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Matrix.Basic
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.LinearAlgebra.Dimension.Free
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.SingletonLemmas
+public import Succinct.LinearAlgebra
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+
+public section
 
 /-! ### Singleton Bound via Rank-Nullity (§1.3.3)
 
@@ -175,9 +179,8 @@ lemma nullspace_vector_has_bounded_support
     -- Use subst to avoid rewrite issues with dependent types
     subst h_m
     rw [hS'_card, hS_card] at h
-    -- Now we have: Fintype.card {i | Matrix.mulVec G.G x i ≠ 0} ≤ G.m - (k - 1)
-    -- Which is: ≤ G.m - k + 1 = m - k + 1 (since G.m = m)
-    omega
+    have hstep : G.m - (k - 1) ≤ G.m - k + 1 := by omega
+    exact h.trans hstep
 
 -- Note: nullspace_to_codeword is no longer needed because
 -- nullspace_vector_has_bounded_support now directly gives us a message x

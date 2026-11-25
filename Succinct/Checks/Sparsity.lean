@@ -1,8 +1,12 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Hamming
-import Succinct.Prob.Implication
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Notation
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Hamming
+public import Succinct.Prob.Implication
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Notation
+
+public section
 
 /-! ### Sparsity Check (§3.2)
 
@@ -49,8 +53,6 @@ lemma sparsity_check {k : ℕ} {x : Vec F k} {q : ℕ}
     have h_nonzero_coords : Finset.card (Finset.filter (fun i => x i ≠ 0) Finset.univ) > q := by
       convert h_not_sparse using 1;
       simp +decide [ weightVec ];
-      rw [ Fintype.card_subtype ];
-      rw [ Finset.filter_not, Finset.card_sdiff ] ; aesop;
     exact ⟨ _, h_nonzero_coords, fun i hi => Finset.mem_filter.mp hi |>.2 ⟩;
   obtain ⟨ s, hs₁, hs₂ ⟩ := h_nonzero_coords;
   -- The probability that a random coordinate is zero is at most $(k - (q + 1)) / k = 1 - (q + 1) / k$.
@@ -60,7 +62,7 @@ lemma sparsity_check {k : ℕ} {x : Vec F k} {q : ℕ}
     · -- The probability that a random coordinate is zero is at most $(k - (q + 1)) / k$.
       have h_prob_zero : (Finset.card (Finset.filter (fun i => x i = 0) Finset.univ) : ℝ) / k ≤ 1 - (q + 1) / k := by
         have h_prob_zero : (Finset.card (Finset.filter (fun i => x i = 0) Finset.univ) : ℝ) ≤ k - (q + 1) := by
-          exact le_tsub_of_add_le_right ( mod_cast by linarith [ show Finset.card ( Finset.filter ( fun i => x i = 0 ) Finset.univ ) + Finset.card ( Finset.filter ( fun i => ¬x i = 0 ) Finset.univ ) = k from by rw [ Finset.filter_card_add_filter_neg_card_eq_card, Finset.card_fin ], show Finset.card ( Finset.filter ( fun i => ¬x i = 0 ) Finset.univ ) ≥ q + 1 from by exact le_trans hs₁ ( Finset.card_le_card fun i hi => by aesop ) ] );
+          exact le_tsub_of_add_le_right ( mod_cast by linarith [ show Finset.card ( Finset.filter ( fun i => x i = 0 ) Finset.univ ) + Finset.card ( Finset.filter ( fun i => ¬x i = 0 ) Finset.univ ) = k from by rw [ Finset.card_filter_add_card_filter_not, Finset.card_fin ], show Finset.card ( Finset.filter ( fun i => ¬x i = 0 ) Finset.univ ) ≥ q + 1 from by exact le_trans hs₁ ( Finset.card_le_card fun i hi => by aesop ) ] );
         rw [ one_sub_div ( by positivity ) ] ; gcongr;
       convert ENNReal.ofReal_le_ofReal h_prob_zero using 1;
       rw [ ProbabilityTheory.cond_apply ] <;> norm_num [ hk ];
@@ -111,13 +113,11 @@ lemma sparse_vectors_rarely_detected {k : ℕ} {x : Vec F k} {q : ℕ}
     (uniformOn (Set.univ : Set (Fin k))) { ω | x ω ≠ 0 } ≤ q / k := by
   -- At most q coordinates are nonzero, out of k total
   rcases k with ( _ | k ) <;> simp_all +decide [ uniformOn, Nat.cast_add_one_ne_zero, ProbabilityTheory.cond_apply ];
-  · simp +decide [ MeasureTheory.Measure.count ];
   · rw [ ENNReal.div_eq_inv_mul ];
     gcongr;
-    convert ENat.coe_le_coe.mpr h_sparse using 1;
+    convert ENat.natCast_le_natCast.mpr h_sparse using 1;
     rw [ MeasureTheory.Measure.count_apply ];
     · simp +decide [ Set.encard, weightVec ];
-      norm_cast;
     · exact trivial
 
 end SparsityCheck

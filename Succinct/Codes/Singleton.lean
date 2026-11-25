@@ -1,7 +1,11 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.SingletonLemmas
-import Mathlib.Data.Nat.Basic
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.SingletonLemmas
+public import Mathlib.Data.Nat.Basic
+
+public section
 
 noncomputable section
 

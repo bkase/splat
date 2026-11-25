@@ -1,0 +1,20 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "SPLAT.fri_folding_preserves_proximity",
+    "SPLAT.bad_alpha_set_bound",
+    "SPLAT.fri_completeness",
+    "SPLAT.fri_single_round_soundness",
+    "SPLAT.fri_multi_round_soundness",
+    "SPLAT.unique_decoding_radius",
+    "SPLAT.singleton_bound",
+    "SPLAT.kronecker_product_distance",
+    "SPLAT.hadamard_distance_formula",
+    "SPLAT.polynomial_zero_check",
+    "SPLAT.reduced_matrix_zero_check"
+  ],
+  "definition_names": [],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": true
+}

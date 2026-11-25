@@ -1,7 +1,11 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Mathlib.Data.Nat.Basic
-import Mathlib.LinearAlgebra.Matrix.DotProduct
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+
+public section
 
 noncomputable section
 
@@ -141,12 +145,17 @@ lemma weight_le_of_subset_zeros
     (h : ∀ i ∈ S, v i = 0) :
     weightVec v ≤ m - S.card := by
   classical
-  convert Set.ncard_le_ncard (show {i | v i ≠ 0} ⊆ Sᶜ from fun x hx ↦ by aesop) using 1
-  · simp +decide [Set.ncard_eq_toFinset_card']
-    convert rfl
-    convert Set.toFinset_card _
-    aesop
-  · simp +decide [Set.ncard_eq_toFinset_card', Finset.card_compl]
+  have htoFin : Set.toFinset {i : Fin m | v i ≠ 0} ⊆ Sᶜ := by
+    trace_state
+    intro i hi
+    simp only [Set.mem_toFinset, Set.mem_ofPred_eq] at hi
+    rw [Finset.mem_compl]
+    intro hiS
+    exact hi (h i hiS)
+  calc weightVec v = (Set.toFinset {i : Fin m | v i ≠ 0}).card := by
+        simp [weightVec, Set.toFinset_card]
+    _ ≤ (Sᶜ : Finset (Fin m)).card := Finset.card_mono htoFin
+    _ = m - S.card := by rw [Finset.card_compl, Fintype.card_fin]
 
 variable [Fintype F] in
 /-- If we select a subset of rows `S` from a matrix `G` such that `|S| < n`

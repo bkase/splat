@@ -1,5 +1,9 @@
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Data.Fintype.Card
+module
+
+public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Data.Fintype.Card
+
+public section
 
 /-! ### Reed-Solomon Polynomial Roots Lemma
 
