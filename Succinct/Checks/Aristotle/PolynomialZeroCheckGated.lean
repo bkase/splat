@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -30,8 +32,10 @@ This is a fundamental result from algebra (polynomial factor theorem).
 
 -/
 
-import Mathlib.Tactic
 
+public import Mathlib.Tactic
+
+public section
 
 noncomputable section
 

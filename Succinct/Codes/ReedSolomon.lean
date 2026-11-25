@@ -1,8 +1,12 @@
-import Succinct.LinearAlgebra
-import Succinct.Vandermonde
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Lagrange
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Vandermonde
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Lagrange
+
+public section
 
 noncomputable section
 open scoped BigOperators

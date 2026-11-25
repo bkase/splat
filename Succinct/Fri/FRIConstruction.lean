@@ -1,10 +1,14 @@
-import Mathlib.Tactic
-import Mathlib.Probability.UniformOn
-import Succinct.LinearAlgebra
-import Succinct.Codes.Hamming
-import Succinct.Prob.Implication
-import Succinct.Fri.FRICompletenessDecomposition
-import Succinct.Fri.Aristotle.BadAlphaSetFiniteGated
+module
+
+public import Mathlib.Tactic
+public import Mathlib.Probability.UniformOn
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Hamming
+public import Succinct.Prob.Implication
+public import Succinct.Fri.FRICompletenessDecomposition
+public import Succinct.Fri.Aristotle.BadAlphaSetFiniteGated
+
+public section
 
 noncomputable section
 
@@ -282,6 +286,7 @@ variable {k : ℕ}
 
 A vector v is q-close to subspace V if there exists w ∈ V such that
 the Hamming distance between v and w is at most q. -/
+@[expose]
 def qCloseToSubspaceVec (v : Vec F k) (V : Submodule F (Vec F k)) (q : ℕ) : Prop :=
   ∃ w ∈ V, ∥v - w∥₀ ≤ q
 
@@ -391,6 +396,7 @@ lemma weight_positive_of_nonzero
 
 The distance is defined as the minimum Hamming weight of (v - w) for any w ∈ V.
 This is the Hamming distance from v to the subspace V. -/
+@[expose]
 def distVecToSubspace (x : Vec F k) (V : Submodule F (Vec F k)) : WithTop ℕ :=
   sInf { w : WithTop ℕ | ∃ v : Vec F k, v ∈ V ∧ w = ∥x - v∥₀ }
 

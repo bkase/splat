@@ -1,5 +1,9 @@
-import Mathlib.Data.Finset.Card
-import Succinct.LinearAlgebra
+module
+
+public import Mathlib.Data.Finset.Card
+public import Succinct.LinearAlgebra
+
+public section
 
 noncomputable section
 
@@ -11,6 +15,7 @@ variable [DecidableEq F]  -- needed so `x i ≠ 0` is a decidable predicate
 variable {n : ℕ}
 
 /-- Hamming weight (ℓ₀ "norm") of a vector `x : F^n`. -/
+@[expose]
 def weightVec (x : Vec F n) : ℕ :=
   Fintype.card { i : Fin n | x i ≠ 0 }
 
@@ -144,12 +149,14 @@ lemma weightVec_triangle (x y : Vec F n) :
 /-- Weight (ℓ₀ "norm") of a set of vectors:
     the minimum Hamming weight of any element, in `WithTop ℕ`
     so that empty sets give `⊤`. -/
+@[expose]
 def weightSet (S : Set (Vec F n)) : WithTop ℕ :=
   sInf { w : WithTop ℕ | ∃ x ∈ S, w = ∥x∥₀ }
 
 scoped notation "∥" S "∥ₛ" => weightSet S
 
 -- point-set difference: { x - y | y ∈ S }
+@[expose]
 def vecDiff (x : Vec F n) (S : Set (Vec F n)) : Set (Vec F n) :=
   { z | ∃ y ∈ S, z = fun i => x i - y i }
 

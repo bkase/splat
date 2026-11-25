@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -34,9 +36,10 @@ the encoded weight is at least d' * d. We decompose z into "slices" and use
 the distance properties of the component codes.
 -/
 
-import Mathlib.Tactic
 
+public import Mathlib.Tactic
 
+public section
 
 noncomputable section
 
@@ -58,22 +61,26 @@ structure LinearCode (F : Type*) [Field F] where
   (G : Mat F m n)
 
 /-- Encode a message -/
+@[expose]
 def encode (C : LinearCode F) (x : Vec F C.n) : Vec F C.m :=
   Matrix.mulVec C.G x
 
 infixl:70 " ⇀ₑ " => encode
 
 /-- Hamming weight -/
+@[expose]
 def weightVec {n : ℕ} (x : Vec F n) : ℕ :=
   Fintype.card { i : Fin n | x i ≠ 0 }
 
 notation "∥" x "∥₀" => weightVec x
 
 /-- Code distance as infimum -/
+@[expose]
 def distance (C : LinearCode F) : WithTop ℕ :=
   sInf { w : WithTop ℕ | ∃ x : Vec F C.n, x ≠ 0 ∧ w = ∥C ⇀ₑ x∥₀ }
 
 /-- Kronecker product code -/
+@[expose]
 def kroneckerCode (G' G : LinearCode F) : LinearCode F where
   m := G'.m * G.m
   n := G'.n * G.n
@@ -114,6 +121,7 @@ open KroneckerGated
 
 variable {F : Type*} [Field F] [DecidableEq F]
 
+@[expose]
 def vecToMat {m n : ℕ} (v : Vec F (m * n)) : Mat F m n :=
   fun i j => v ⟨i.val * n + j.val, by
     nlinarith [ Fin.is_lt i, Fin.is_lt j ]⟩
@@ -125,9 +133,11 @@ open KroneckerGated
 
 variable {F : Type*} [Field F] [DecidableEq F]
 
+@[expose]
 def weightMat {m n : ℕ} (M : Mat F m n) : ℕ :=
   Fintype.card { p : Fin m × Fin n | M p.1 p.2 ≠ 0 }
 
+@[expose]
 def nonZeroCols {m n : ℕ} (M : Mat F m n) : ℕ :=
   Fintype.card { j : Fin n | ∃ i, M i j ≠ 0 }
 
@@ -159,9 +169,11 @@ open KroneckerGated
 
 variable {F : Type*} [Field F] [DecidableEq F]
 
+@[expose]
 def matMul {m n p : ℕ} (A : Mat F m n) (B : Mat F n p) : Mat F m p :=
   fun i k => ∑ j, A i j * B j k
 
+@[expose]
 def matTranspose {m n : ℕ} (A : Mat F m n) : Mat F n m :=
   fun i j => A j i
 

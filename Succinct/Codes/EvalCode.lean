@@ -1,6 +1,10 @@
-import Succinct.LinearAlgebra
-import Succinct.Vandermonde
-import Succinct.Codes.Core
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Vandermonde
+public import Succinct.Codes.Core
+
+public section
 
 noncomputable section
 
@@ -11,6 +15,7 @@ section EvalCode
 variable {F : Type*} [Field F]
 
 /-- Evaluation-code instance from Vandermonde at points `α`, degree bound `< n`. -/
+@[expose]
 def evalCode {m n : ℕ} (α : EvalPoints m F) : LinearCode F :=
   { m := m, n := n, G := vandermonde (F := F) α }
 

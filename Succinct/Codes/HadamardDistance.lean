@@ -1,13 +1,16 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Matrix.Mul
-import Mathlib.LinearAlgebra.Matrix.DotProduct
+module
 
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.HadamardCore
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.HadamardCore
+
+public section
 
 noncomputable section
 open scoped BigOperators
@@ -30,15 +33,18 @@ variable {n : ℕ}
 
 /-- All tuples of length n over F.
     This is the indexing set for the Hadamard encoding. -/
+@[expose]
 def allTuples (F : Type*) [Field F] [Fintype F] (n : ℕ) : Finset (Fin n → F) :=
   Finset.univ
 
 /-- The set of all tuples that have zero dot product with x.
     This is the kernel of the linear functional y ↦ ⟨y, x⟩. -/
+@[expose]
 def zeroDotProductSet (x : Vec F n) : Finset (Fin n → F) :=
   {y ∈ allTuples F n | ∑ i : Fin n, y i * x i = 0}
 
 /-- The set of all tuples that have nonzero dot product with x. -/
+@[expose]
 def nonzeroDotProductSet (x : Vec F n) : Finset (Fin n → F) :=
   {y ∈ allTuples F n | ∑ i : Fin n, y i * x i ≠ 0}
 

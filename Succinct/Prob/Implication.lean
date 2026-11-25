@@ -1,11 +1,15 @@
-import Mathlib.Basic.ENNReal.Basic
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Independence.Basic
-import Mathlib.Data.Set.Lattice.Bounded
-import Mathlib.Data.Set.Lattice.Disjoint
-import Mathlib.Data.Set.Lattice.Image
-import Mathlib.Data.Set.Lattice.Indexed
-import Mathlib.Data.Set.Lattice.Order
+module
+
+public import Mathlib.Basic.ENNReal.Basic
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Independence.Basic
+public import Mathlib.Data.Set.Lattice.Bounded
+public import Mathlib.Data.Set.Lattice.Disjoint
+public import Mathlib.Data.Set.Lattice.Image
+public import Mathlib.Data.Set.Lattice.Indexed
+public import Mathlib.Data.Set.Lattice.Order
+
+public section
 
 /-!
 # Probabilistic Implication (Section 1.4)
@@ -22,6 +26,7 @@ namespace Succinct.Prob
 
 /-- Event-level probabilistic implication: `A ⟹[μ]_(p) B` means
 `μ (A ∩ Bᶜ) ≤ p`.  This is exactly the definition in §1.4 of the paper. -/
+@[expose]
 def ProbImpEv {Ω : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) (A B : Set Ω) (p : ℝ≥0∞) : Prop :=
   μ (A ∩ Bᶜ) ≤ p
@@ -30,6 +35,7 @@ notation:50 A " ⟹[" μ "]_(" p ")" B => ProbImpEv μ A B p
 
 /-- Random-variable-level wrapper: `P ⟹[μ; r ⇒ s]_(p) Q` expands to the
 event version on `{ω | P (r ω)}` and `{ω | Q (s ω)}`. -/
+@[expose]
 def ProbImp {Ω α β : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) (r : Ω → α) (s : Ω → β)
     (P : α → Prop) (Q : β → Prop) (p : ℝ≥0∞) : Prop :=

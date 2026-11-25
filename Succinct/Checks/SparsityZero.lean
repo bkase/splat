@@ -1,13 +1,17 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Checks.Sparsity
-import Succinct.Checks.Zero
-import Succinct.Prob.Implication
-import Succinct.Checks.Aristotle.ProductMeasureProjection
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Notation
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Checks.Sparsity
+public import Succinct.Checks.Zero
+public import Succinct.Prob.Implication
+public import Succinct.Checks.Aristotle.ProductMeasureProjection
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Notation
+
+public section
 
 /-! ### Sparsity-Zero Composition (§3.2)
 

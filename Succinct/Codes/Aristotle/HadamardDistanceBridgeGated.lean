@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -16,7 +18,10 @@ The following was proved by Aristotle:
 - theorem hadamard_weight_lower_bound
 -/
 
-import Mathlib.Tactic
+
+public import Mathlib.Tactic
+
+public section
 
 /-! ### Hadamard Distance Bridge (Batch 160)
 
@@ -38,6 +43,7 @@ variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
 variable {n : ℕ}
 
 /-- Inner product of two vectors -/
+@[expose]
 def innerProductGated (x y : Fin n → F) : F := ∑ i, x i * y i
 
 /-- For nonzero x, the set of r with ⟨r, x⟩ = 0 is a proper subspace.

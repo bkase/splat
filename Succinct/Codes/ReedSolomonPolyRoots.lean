@@ -1,5 +1,9 @@
-import Succinct.LinearAlgebra
-import Mathlib.Algebra.Polynomial.Roots
+module
+
+public import Succinct.LinearAlgebra
+public import Mathlib.Algebra.Polynomial.Roots
+
+public section
 
 /-! ### Polynomial Roots Bound (Helper for Reed-Solomon Distance)
 

@@ -1,5 +1,9 @@
-import Mathlib.Data.Finset.Basic
-import Succinct.LinearAlgebra
+module
+
+public import Mathlib.Data.Finset.Basic
+public import Succinct.LinearAlgebra
+
+public section
 
 noncomputable section
 
@@ -15,16 +19,19 @@ structure LinearCode (F : Type*) [Field F] where
   (G   : Mat F m n)
 
 /-- Encode a message vector `x : F^n` to the codeword `G x : F^m`. -/
+@[expose]
 def encode (C : LinearCode F) (x : Vec F C.n) : Vec F C.m :=
   Matrix.mulVec C.G x
 
 scoped infixl:70 " ⇀ₑ " => encode
 
 /-- Generator matrix for the k‑repeated code: `k` vertical copies of `Iₙ`. -/
+@[expose]
 def repeatGen {F : Type*} [Field F] (k n : ℕ) : Mat F (k * n) n :=
   fun (i : Fin (k * n)) (j : Fin n) => if i.val % n = j.val then (1 : F) else 0
 
 /-- The k‑repeated linear code of length `k*n` and dimension `n`. -/
+@[expose]
 def repeatCode {F : Type*} [Field F] (k n : ℕ) : LinearCode F :=
   { m := k * n, n := n, G := repeatGen (F := F) k n }
 

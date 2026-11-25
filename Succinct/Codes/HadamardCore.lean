@@ -1,5 +1,9 @@
-import Succinct.Codes.Core
-import Mathlib.Data.Fintype.Card
+module
+
+public import Succinct.Codes.Core
+public import Mathlib.Data.Fintype.Card
+
+public section
 
 /-! ### Hadamard Code Core Definitions
 
@@ -27,6 +31,7 @@ variable {n : ℕ}
 
     This gives a bijection between `Fin m` and `Fin n → F` where m = |F|ⁿ.
     The function uses Fintype.equivFin to create the bijection. -/
+@[expose]
 def tupleEnum : Fin (Fintype.card (Fin n → F)) → (Fin n → F) :=
   fun i => Fintype.equivFin (Fin n → F) i
 
@@ -35,6 +40,7 @@ def tupleEnum : Fin (Fintype.card (Fin n → F)) → (Fin n → F) :=
     Block length: |F|ⁿ (all possible n-tuples)
     Message dimension: n
     Generator matrix: Row i is the i-th n-tuple from the enumeration -/
+@[expose]
 def hadamardCode : LinearCode F where
   m := Fintype.card (Fin n → F)  -- block length is |F|ⁿ
   n := n                            -- message dimension

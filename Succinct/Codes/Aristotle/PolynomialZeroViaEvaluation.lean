@@ -1,7 +1,11 @@
-import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Finset.Card
+module
+
+public import Mathlib.Algebra.Polynomial.Basic
+public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Finset.Card
+
+public section
 
 /-! ### Polynomial Zero Via Evaluation Library
 

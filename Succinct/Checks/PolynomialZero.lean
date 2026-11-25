@@ -1,16 +1,20 @@
-import Succinct.LinearAlgebra
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Succinct.Codes.Hamming
-import Succinct.Codes.ReedSolomon
-import Succinct.Codes.Lagrange
-import Succinct.Checks.Zero
-import Succinct.Prob.Implication
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Notation
-import Mathlib.Data.Fintype.Card
-import Succinct.Codes.Aristotle.PolynomialZeroViaEvaluation
-import Succinct.Checks.Aristotle.PolynomialZeroCheckGated
+module
+
+public import Succinct.LinearAlgebra
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Succinct.Codes.Hamming
+public import Succinct.Codes.ReedSolomon
+public import Succinct.Codes.Lagrange
+public import Succinct.Checks.Zero
+public import Succinct.Prob.Implication
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Notation
+public import Mathlib.Data.Fintype.Card
+public import Succinct.Codes.Aristotle.PolynomialZeroViaEvaluation
+public import Succinct.Checks.Aristotle.PolynomialZeroCheckGated
+
+public section
 
 /-! ### Polynomial Zero Check (§3.1.4)
 

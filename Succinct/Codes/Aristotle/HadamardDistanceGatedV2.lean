@@ -1,3 +1,5 @@
+module
+
 /-
 This file was edited by Aristotle (https://aristotle.harmonic.fun).
 
@@ -40,11 +42,13 @@ So the Hadamard code has distance |F|^n - |F|^{n-1} = |F|^{n-1} * (|F| - 1).
 
 -/
 
-import Mathlib.Tactic
-import Mathlib.Data.Fintype.Card
-import Mathlib.Algebra.Field.Basic
-import Mathlib.LinearAlgebra.Dimension.Finrank
 
+public import Mathlib.Tactic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+
+public section
 
 noncomputable section
 

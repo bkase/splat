@@ -1,7 +1,11 @@
-import Succinct.Codes.Core
-import Succinct.Codes.Distance
-import Mathlib.Data.Nat.Basic
-import Mathlib.LinearAlgebra.Matrix.DotProduct
+module
+
+public import Succinct.Codes.Core
+public import Succinct.Codes.Distance
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+
+public section
 
 noncomputable section
 
