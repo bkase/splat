@@ -19,11 +19,16 @@ A Lean 4 formalization of [*Succinct Proofs and Linear Algebra*](https://eprint.
   - Zero-testing for vectors and polynomials via random evaluation
   - Matrix zero-testing via row sampling
   - Product measure projection for multi-round protocols
-- ✅ **Section 4**: FRI (Fast Reed-Solomon IOP) soundness
+- **Section 4**: FRI folding and fixed-witness checks
   - Subspace distance theory relating matrix proximity to linear subspaces
   - Unique decoding radius argument via contrapositive
   - FRI construction: folding operation, bad alpha set finiteness
   - Polynomial decomposition for completeness
+  - Fixed-witness soundness for one challenge and independent repetitions
+
+The repeated check uses the same fold and witness throughout. The complete
+recursive FRI protocol and its end-to-end soundness theorem remain outside
+the formalization.
 
 ## Getting started
 
@@ -77,13 +82,15 @@ uv.lock                   ← locked Python dependency graph
 
 ## Module map
 
-- `Succinct.LinearAlgebra` — `Vec`, `Mat`, range/nullspace, bases.
-- `Succinct.Vandermonde` — evaluation points, Vandermonde matrices, polynomial evaluation as matrix–vector multiplies.
-- `Succinct.Codes.Core` — `LinearCode`, `encode`, repeat code helper.
-- `Succinct.Codes.Hamming` — ℓ₀/Hamming weight on vectors and sets.
-- `Succinct.Prob.Implication` — probabilistic implication calculus (paper §1.4), chaining/contrapositive/independence rules.
-- `Succinct.Prob.Examples` — tiny sanity checks for the `⟹[μ]_` notation.
-- `Succinct` — umbrella re-export for downstream users.
+| Module | Contents |
+|---|---|
+| `Succinct.LinearAlgebra` | `Vec`, `Mat`, range/nullspace, bases |
+| `Succinct.Vandermonde` | Evaluation points, Vandermonde matrices, polynomial evaluation as matrix–vector multiplication |
+| `Succinct.Codes.Core` | `LinearCode`, `encode`, repeat code helper |
+| `Succinct.Codes.Hamming` | ℓ₀/Hamming weight on vectors and sets |
+| `Succinct.Prob.Implication` | Probabilistic implication calculus (paper §1.4), chaining/contrapositive/independence rules |
+| `Succinct.Prob.Examples` | Examples of the `⟹[μ]_` notation |
+| `Succinct` | Umbrella re-export for downstream users |
 
 ### Probabilistic implication at a glance
 
@@ -111,11 +118,33 @@ end
 
 ## Palomar registry layout
 
-This repository is prepared for submission to the [Palomar registry](https://palomar-registry.org). The root carries the four required artifacts:
+This repository is prepared for submission to the [Palomar registry](https://palomar-registry.org).
+[Challenge.lean](Challenge.lean) contains eleven self-contained statements using
+Mathlib and local support definitions. [Solution.lean](Solution.lean) repeats
+those definitions and proves each statement from the existing `Succinct`
+development. Neither module imports the other.
 
-- `Challenge.lean` — self-contained, Mathlib-only restatements of the two headline results (FRI one-step proximity reduction and the bad-challenge bound from paper §4.2), with the support definitions `SPLAT.weightVec` and `SPLAT.friFold` repeated body-for-body (the fold's index bounds are re-proved in term mode so the Challenge's and Solution's copies elaborate to identical constants; the values are definitionally the development's by proof irrelevance).
-- `Solution.lean` — the same statements proved from the `Succinct` development (`SuccinctProofs.fri_folding_preserves_proximity`, `SuccinctProofs.bad_alpha_set_finite_of_ne`); the duplicated definitions are definitionally the Challenge's, so the defeq judgment is by delta.
-- `comparator.json` — Comparator configuration selecting the two theorems and permitting only `propext`, `Quot.sound`, `Classical.choice`.
-- `formalization.yaml` — entry metadata (v0.4 schema).
+[comparator.json](comparator.json) selects all eleven theorems and permits only
+`propext`, `Quot.sound`, and `Classical.choice`. [formalization.yaml](formalization.yaml)
+records their scope and correspondence to the paper using the v0.4 schema.
+All names below belong to the `SPLAT` namespace.
+
+| Theorem | Result |
+|---|---|
+| `fri_folding_preserves_proximity` | Folding preserves proximity to the folded subspace |
+| `bad_alpha_set_bound` | At most `k/2` challenges make two distinct vectors' folds collide |
+| `fri_completeness` | Reed-Solomon codewords fold to evaluations with coefficient bound `(n+1)/2` |
+| `fri_single_round_soundness` | A fixed-witness fold check has error at most `(k/2)/|F|` |
+| `fri_multi_round_soundness` | Independent repetitions of that check have error at most `(k/2)^l / |F|^l` |
+| `unique_decoding_radius` | The nearby matrix is unique below half the finite subspace distance |
+| `singleton_bound` | Code distance is at most `m-n+1` for a nonempty message space |
+| `kronecker_product_distance` | Component distance bounds multiply under the Kronecker product |
+| `hadamard_distance_formula` | Nonzero messages have weight `|F|^n - |F|^(n-1)` for `n > 0` |
+| `polynomial_zero_check` | A random evaluation has false-zero probability at most `(n-1)/|F|` |
+| `reduced_matrix_zero_check` | Independent matrix zero checks have error at most `(1-d/m)^t` |
+
+The probability statements bound the measure of acceptance together with a
+false conclusion. The theorem `fri_multi_round_soundness` concerns repetitions
+of one fold against a fixed witness, without recursive FRI commitments.
 
 A predictive mechanical preflight can be run via the reusable workflow in `.github/workflows/palomar-preflight.yml`, pinned to an exact `PalomarRegistry/PalomarSubmission` commit. The preflight is advisory; actual submissions go through [submit.palomar-registry.org](https://submit.palomar-registry.org).

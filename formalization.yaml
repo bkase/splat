@@ -12,9 +12,9 @@ project:
     Kronecker-product constructions; the probabilistic implication
     calculus of Section 1.4; the zero, sparsity, matrix, and polynomial
     proximity checks of Section 3; and the FRI low-degree test analysis of
-    Section 4, including the one-step folding proximity reduction and the
-    bad-challenge (bad-alpha) bound, which are the two headline results
-    compared by the Palomar Comparator.
+    Section 4, including folding completeness, proximity preservation,
+    and fixed-witness checking bounds. Eleven results are compared by
+    the Palomar Comparator.
   authors:
     - "François Garillot"
     - "Brandon Kase"
@@ -43,8 +43,9 @@ sources:
       proximity checks), and the core one-step reduction of Section 4.2
       (FRI folding preserves proximity; the bad-challenge set for
       distinct vectors has cardinality at most k/2), together with
-      single-round FRI soundness. The full multi-round protocol
-      assembly is not formalized end to end.
+      Reed-Solomon folding completeness and fixed-witness FRI soundness
+      for one challenge or independent repetitions of the same fold.
+      The full multi-round protocol assembly is not formalized end to end.
     license: "unknown"
     author_endorsement: "not-contacted"
 
@@ -55,7 +56,9 @@ status:
     Formalized: the paper's linear-algebra preliminaries, the
     probabilistic implication calculus, the Section 3 proximity checks,
     the FRI fold, the one-step proximity reduction, the bad-alpha bound,
-    and single-round FRI soundness, all over arbitrary finite fields.
+    Reed-Solomon folding completeness, and fixed-witness FRI soundness
+    for one challenge or independent repetitions of the same fold,
+    over finite fields with the stated characteristic hypotheses.
     Not formalized: the complete multi-round FRI protocol with
     commitment semantics and the end-to-end soundness theorem of the
     paper's Section 4; the paper's closing conjecture on proximity
@@ -69,6 +72,15 @@ status:
   main_results:
     - "SPLAT.fri_folding_preserves_proximity"
     - "SPLAT.bad_alpha_set_bound"
+    - "SPLAT.fri_completeness"
+    - "SPLAT.fri_single_round_soundness"
+    - "SPLAT.fri_multi_round_soundness"
+    - "SPLAT.unique_decoding_radius"
+    - "SPLAT.singleton_bound"
+    - "SPLAT.kronecker_product_distance"
+    - "SPLAT.hadamard_distance_formula"
+    - "SPLAT.polynomial_zero_check"
+    - "SPLAT.reduced_matrix_zero_check"
 
 automation:
   methods:
@@ -94,22 +106,24 @@ automation:
 
 fidelity:
   divergences: >-
-    The two compared statements phrase the folded code as a set rather
-    than as the submodule literal used internally; this is definitional.
-    All other statements follow the paper's definitions over arbitrary
-    finite fields, with the hypotheses the paper assumes (distinct,
-    nonzero evaluation points; even domain length; 2 ≠ 0) stated
-    explicitly rather than assumed as axioms.
+    Folded-code membership is stated as an existential witness rather
+    than a submodule literal. Codes are stated as generator matrices,
+    and probabilistic implication is expanded to its measure inequality.
+    These changes unfold the internal definitions. FRI soundness concerns
+    a fixed witness and independent repetitions of the same fold check.
+    It does not establish soundness of the recursive FRI protocol.
+    Distinctness, nonzero evaluation points, even domain length, and
+    2 ≠ 0 are explicit hypotheses where required.
 
 review:
   status: "self-assessed"
   reviewers:
     - "François Garillot"
   notes: >-
-    Statements were audited against the paper's Section 4.2 by the
-    responsible maintainer; proofs compile with only the three standard
-    Lean axioms and were checked to contain no `sorry` and no
-    `native_decide`.
+    The submission statements restate existing proved results. Local
+    Comparator checks accept all eleven solutions with only the three
+    standard Lean axioms. Solution.lean contains no `sorry` or
+    `native_decide`. The repeated FRI check uses a fixed witness.
 
 alignment:
   namespace: "SPLAT"
@@ -136,6 +150,78 @@ alignment:
         Succinct/Fri/FRIConstruction.lean, which bounds by k/2 the
         number of challenges alpha for which two distinct vectors have
         equal FRI folds.
+    - source: "Section 4.2, one-step reduction (completeness part)"
+      lean: "SPLAT.fri_completeness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_completeness. Folding evaluations
+        of n coefficients gives evaluations of (n+1)/2 coefficients at
+        squared evaluation points under the stated coset hypotheses.
+    - source: "Section 4.2, fixed-witness fold checking"
+      lean: "SPLAT.fri_single_round_soundness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_single_round_soundness. One
+        random challenge has error at most (k/2)/|F| against a fixed
+        witness in the subspace.
+    - source: "Independent repetition of the Section 4.2 fixed-witness fold check"
+      lean: "SPLAT.fri_multi_round_soundness"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.fri_multi_round_soundness. Independent
+        challenges repeat the same fold check against the same witness,
+        with error at most (k/2)^l / |F|^l. This does not assemble the
+        complete recursive FRI protocol.
+    - source: "Section 3.2.3, unique decoding radius"
+      lean: "SPLAT.unique_decoding_radius"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.unique_decoding_radius. Below half
+        the finite subspace distance, there is a unique nearby matrix
+        whose columns belong to the subspace.
+    - source: "Section 1.3, Singleton bound"
+      lean: "SPLAT.singleton_bound"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.singleton_bound. For a generator
+        matrix with n > 0 message coordinates and m rows, its distance
+        is at most m - n + 1, with natural-number subtraction.
+    - source: "Section 3.1, Kronecker product distance"
+      lean: "SPLAT.kronecker_product_distance"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.kronecker_product_distance. The
+        distance of the Kronecker matrix is at least the product of
+        the component distance bounds.
+    - source: "Section 1.3.3, Hadamard distance"
+      lean: "SPLAT.hadamard_distance_formula"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from hadamard_distance_formula_gated. Every nonzero
+        message of length n > 0 has encoding weight |F|^n - |F|^(n-1).
+    - source: "Section 3.1.4, polynomial zero check"
+      lean: "SPLAT.polynomial_zero_check"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.polynomial_zero_check. A random
+        evaluation of a polynomial of degree below n has false-zero
+        probability at most (n-1)/|F| under the stated code hypotheses.
+    - source: "Section 3.1.3, reduced matrix zero check"
+      lean: "SPLAT.reduced_matrix_zero_check"
+      module: "Challenge"
+      status: "proved"
+      note: >-
+        Follows from SuccinctProofs.reduced_matrix_zero_check. With
+        code distance at least d, t independent matrix checks have
+        false-zero probability at most (1-d/m)^t.
 
 acknowledgements: >-
   Mathlib and its contributors; the Batteries, Aesop, and proof-widget
