@@ -100,8 +100,8 @@ lemma nullspace_vector_has_bounded_support
     (hm : 0 < m)
     (hk : 0 < k) :
     ∃ (x : Fin G.n → F), x ≠ 0 ∧ ∥G ⇀ₑ x∥₀ ≤ (m - k + 1) := by
-  -- The Singleton bound states that for a k-dimensional code in F^m,
-  -- there exists a nonzero codeword with weight at most m - k + 1.
+  -- This gives a nonzero message whose encoding has weight at most m - k + 1.
+  -- Injectivity would also make the encoding a nonzero codeword.
   --
   -- Proof strategy: Use the exists_ne_zero_mulVec_restrict_eq_zero lemma
   -- to find a nonzero message x such that G * x has many zeros.
@@ -188,8 +188,9 @@ lemma nullspace_vector_has_bounded_support
 
 /-- **Main theorem**: Singleton bound via rank-nullity.
 
-    For a k-dimensional code with block length m,
-    there exists a nonzero codeword of weight at most (m - k + 1). -/
+    For a generator with message length k and block length m,
+    there exists a nonzero message whose encoding has weight at most m - k + 1.
+    The encoding itself need not be nonzero without injectivity. -/
 theorem exists_low_weight_codeword_rank_nullity
     {k m : ℕ} (C : LinearCode F) [Fintype F]
     (hDim : C.n = k) (hBlockLen : C.m = m)

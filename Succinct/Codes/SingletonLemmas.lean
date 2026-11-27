@@ -16,7 +16,9 @@ namespace SuccinctProofs
 The Singleton bound d ≤ n - k + 1 is proved by:
 1. A k-dimensional code has a basis of k message vectors
 2. The encoding of the basis spans the code's range
-3. By linear algebra: ∃ nonzero codeword with ≤ (m - k + 1) nonzeros
+3. By linear algebra: ∃ nonzero message whose encoding has ≤ (m - k + 1) nonzeros
+
+Injectivity of the generator is needed to make this encoding a nonzero codeword.
 
 This file breaks down the proof into smaller lemmas.
 

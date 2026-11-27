@@ -13,12 +13,34 @@ section Distance
 
 variable {F : Type*} [Field F] [DecidableEq F]
 
-/-- Distance of a linear code: minimum Hamming weight among nonzero codewords
-    (as an infimum in `WithTop ℕ`). -/
+/-- Minimum Hamming weight of the encodings of nonzero messages, as an infimum
+    in `WithTop ℕ`. This is zero for non-injective encoders and agrees with
+    minimum nonzero-codeword weight when the encoder is injective. -/
 @[expose]
 def distance (C : LinearCode F) : WithTop ℕ :=
   sInf { w : WithTop ℕ |
     ∃ x : Vec F C.n, x ≠ 0 ∧ w = ∥C ⇀ₑ x∥₀ }
+
+/-- For an injective encoder, message distance equals the minimum weight of
+    a nonzero vector in the image code. -/
+lemma distance_eq_weightSet_range_diff_zero (C : LinearCode F)
+    (hG : Function.Injective (encode C)) :
+    distance C = weightSet (Set.range (encode C) \ {0}) := by
+  unfold distance weightSet
+  congr 1
+  ext w
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨encode C x, ⟨⟨x, rfl⟩, ?_⟩, rfl⟩
+    intro hz
+    apply hx
+    apply hG
+    simpa [encode] using hz
+  · rintro ⟨y, ⟨⟨x, rfl⟩, hy⟩, rfl⟩
+    refine ⟨x, ?_, rfl⟩
+    intro hx
+    apply hy
+    simp [hx, encode]
 
  lemma distance_le_weight_encode_nonzero
       (C : LinearCode F) (z : Vec F C.n) (hz : z ≠ 0) :

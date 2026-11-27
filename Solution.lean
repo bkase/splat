@@ -73,7 +73,8 @@ def reedSolomonEval {F : Type*} [Field F] {k n : ℕ}
     (points : Fin k → F) (coeffs : Fin n → F) : Fin k → F :=
   fun i => ∑ j : Fin n, coeffs j * points i ^ j.val
 
-/-- Minimum weight of an encoding of a nonzero message. -/
+/-- Minimum weight of an encoding of a nonzero message. For injective generators,
+    this is the minimum weight of a nonzero codeword in the image. -/
 @[expose]
 def codeDistance {F : Type*} [Field F] [DecidableEq F] {m n : ℕ}
     (G : Matrix (Fin m) (Fin n) F) : WithTop ℕ :=
@@ -160,11 +161,12 @@ theorem unique_decoding_radius {F : Type*} [Field F] [DecidableEq F] {k n : ℕ}
         X = Y + Ξ ∧ (∀ j : Fin n, (fun i => Y i j) ∈ V) ∧ nonZeroRows Ξ ≤ q :=
   SuccinctProofs.unique_decoding_radius V X q h_close h_dist hd'
 
-/-- The Singleton bound for a generator matrix with a nonempty message space. -/
+/-- The Singleton bound for a full-column-rank generator with positive message
+    length. Injectivity makes `n` the dimension of the image code. -/
 theorem singleton_bound {F : Type*} [Field F] [DecidableEq F] [Fintype F] {m n : ℕ}
-    (G : Matrix (Fin m) (Fin n) F) (hn : 0 < n) :
+    (G : Matrix (Fin m) (Fin n) F) (hn : 0 < n) (hG : Function.Injective G.mulVec) :
     codeDistance G ≤ (m - n + 1 : ℕ) :=
-  SuccinctProofs.singleton_bound ⟨m, n, G⟩ hn
+  SuccinctProofs.singleton_bound ⟨m, n, G⟩ hn hG
 
 /-- The Kronecker product has distance at least the product of the component bounds. -/
 theorem kronecker_product_distance {F : Type*} [Field F] [DecidableEq F]

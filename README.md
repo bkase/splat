@@ -137,11 +137,16 @@ All names below belong to the `SPLAT` namespace.
 | `fri_single_round_soundness` | A fixed-witness fold check has error at most `(k/2)/|F|` |
 | `fri_multi_round_soundness` | Independent repetitions of that check have error at most `(k/2)^l / |F|^l` |
 | `unique_decoding_radius` | The nearby matrix is unique below half the finite subspace distance |
-| `singleton_bound` | Code distance is at most `m-n+1` for a nonempty message space |
+| `singleton_bound` | Code distance is at most `m-n+1` for a full-column-rank generator with `n > 0` |
 | `kronecker_product_distance` | Component distance bounds multiply under the Kronecker product |
 | `hadamard_distance_formula` | Nonzero messages have weight `|F|^n - |F|^(n-1)` for `n > 0` |
 | `polynomial_zero_check` | A random evaluation has false-zero probability at most `(n-1)/|F|` |
 | `reduced_matrix_zero_check` | Independent matrix zero checks have error at most `(1-d/m)^t` |
+
+Code distance minimizes the encoding weight over nonzero messages, as in
+Section 1.2.2 of the paper. It is zero for non-injective generators. The
+Singleton theorem requires an injective generator, so `n` is the image code's
+dimension and the distance is its minimum nonzero-codeword weight.
 
 The probability statements bound the measure of acceptance together with a
 false conclusion. The theorem `fri_multi_round_soundness` concerns repetitions
