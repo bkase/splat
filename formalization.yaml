@@ -189,8 +189,10 @@ alignment:
       status: "proved"
       note: >-
         Follows from SuccinctProofs.singleton_bound. For a generator
-        matrix with n > 0 message coordinates and m rows, its distance
-        is at most m - n + 1, with natural-number subtraction.
+        matrix with full column rank, n > 0 message coordinates, and m
+        rows, its distance is at most m - n + 1. Injectivity makes n
+        the image code's dimension and identifies the message-based
+        distance with its minimum nonzero-codeword weight.
     - source: "Section 3.1, Kronecker product distance"
       lean: "SPLAT.kronecker_product_distance"
       module: "Challenge"
